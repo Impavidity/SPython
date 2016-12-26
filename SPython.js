@@ -6,7 +6,7 @@ File mode : node Spython.js foo.py
 */
 
 var arguments = process.argv
-var fileModeModule = require("./fileMode");
+var fileModeClass = require("./fileMode");
 if (arguments.length == 2) {
     console.log("InterativeMode");
     //InterativeMode();
@@ -14,7 +14,7 @@ if (arguments.length == 2) {
 if (arguments.length == 3) {
     console.log("FileMode");
     //console.log(arguments[2]);
-    var fileMode = new fileModeModule(arguments[2]);
+    var fileMode = new fileModeClass(arguments[2]);
 } else {
     console.log("Arguments Error!");
     return;
