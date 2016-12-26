@@ -1,0 +1,8 @@
+stmt: simple_stmt | compound_stmt
+small_stmt: (expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt |
+            import_stmt | global_stmt | exec_stmt | assert_stmt)
+compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
+expr_stmt: testlist augassign testlist
+augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' |
+            '<<=' | '>>=' | '**=' | '//=')
+            
