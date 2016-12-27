@@ -297,4 +297,16 @@ function Engine() {
         }
     }
     
+    function _exec_comparison(ast,context) {
+        if(ast.type == "COMPARISON"){
+            arr = new array();
+            for(i=0;i<=ast.sons.length;i++) {
+               if(ast.sons[i].type == "EXPR")
+                   arr.push(_exec_expr(ast.sons[i], context));
+               else if(ast.sons[i].type == "COMP_ON")
+                   arr.push(_exec_comp_on(a.sons[i],context));
+            }
+            return arr;
+        }
+    }
 }
