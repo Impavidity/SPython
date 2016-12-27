@@ -1,6 +1,4 @@
-single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
-file_input: (NEWLINE | stmt)* ENDMARKER
-eval_input: testlist NEWLINE* ENDMARKER
+file_input: (stmt)*
 
 
 funcdef: 'def' NAME parameters ':' suite
@@ -12,7 +10,10 @@ varargslist: ((fpdef ['=' test] ',')*
 fpdef: NAME | '(' fplist ')'
 fplist: fpdef (',' fpdef)* [',']
 
-stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | global_stmt | exec_stmt | assert_stmt | if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
+stmt: simple_stmt | compound_stmt
+simple_stmt: (expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt |
+             import_stmt | global_stmt | exec_stmt | assert_stmt)
+compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
 expr_stmt: testlist augassign testlist | testlist '=' testlist
 augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' |
             '<<=' | '>>=' | '**=' | '//=')
@@ -85,13 +86,13 @@ argument: test [comp_for] | test '=' test
 
 list_iter: list_for | list_if
 list_for: 'for' exprlist 'in' testlist_safe [list_iter]
+list_if: 'if' old_test [list_iter]
 
 testlist_safe: old_test [(',' old_test)+ [',']]
 old_test: or_test | old_lambdef
 old_lambdef: 'lambda' [varargslist] ':' old_test
 
 
-list_if: 'if' old_test [list_iter]
 
 comp_iter: comp_for | comp_if
 comp_for: 'for' exprlist 'in' or_test [comp_iter]
