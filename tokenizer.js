@@ -141,6 +141,12 @@ function Lexer(inputFile) {
             if (identifierStr == "for") treeNode.type = "FOR";
             if (identifierStr == "def") treeNode.type = "DEF";
             if (identifierStr == "class") treeNode.type = "CLASS";
+            if (identifierStr == "break") treeNode.type = "BREAK";
+            if (identifierStr == "continue") treeNode.type = "CONTINUE";
+            if (identifierStr == "return") treeNode.type = "RETURN";
+            if (identifierStr == "global") treeNode.type = "GLOBAL";
+            if (identifierStr == "exec") treeNode.type = "EXEC";
+            if (identifierStr == "assert") treeNode.type = "ASSERT";
             return treeNode;
 
         }

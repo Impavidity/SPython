@@ -22,6 +22,9 @@ function FileMode(fileName) {
     var ast = parser._file_input();
     checkTree(ast,0);
     //console.log(ast);
+    
+    var ObjectClass = require("./Object");
+    var objectClass = new ObjectClass();
     /*
     var engineClass = require("./engine");
     var engine = new engineClass();
