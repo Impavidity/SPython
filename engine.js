@@ -70,7 +70,6 @@ function Engine() {
             if (key == ast.sons.length) {
                 if (ast.sons[key].type == "SUITE") {
                     _exec_suite(ast.sons[key], context);
-                    break;
                 }
             }
         }
@@ -84,6 +83,52 @@ function Engine() {
                         _exec_suite(ast.sons[1], context);
                     }
                 }
+            }
+        }
+    }
+    
+    function _exec_test(ast, context) {
+        if (ast.type == "TEST" && ast.sons.length == 1) {
+            if (ast.sons[0].type == "OR_TEST") {
+                return _exec_or_test(ast.sons[0], context);
+            }
+        }
+    }
+
+    function _exec_or_test(ast, context) {
+        if (ast.type == "OR_TEST" && ast.sons.length >= 1) {
+            if (ast.sons[0].type == "AND_TEST") {
+                var result = _exec_and_test(ast.sons[0], context);
+                for (var key = 1; key < ast.sons.length; key++) {
+                    if (ast.sons[key].type == "AND_TEST") {
+                        result = result || _exec_and_test(ast.sons[key], context);
+                    }
+                }
+                return result;
+            }
+        }
+    }
+
+    function _exec_and_test(ast, context) {
+        if (ast.type == "AND_TEST" && ast.sons.length >= 1) {
+            if (ast.sons[0].type == "NOT_TEST") {
+                var result = _exec_not_test(ast.sons[0], context);
+                for (var key = 1; key < ast.sons.length; key++) {
+                    if (ast.sons[key].type == "NOT_TEST") {
+                        result = result && _exec_not_test(ast.sons[key], context);
+                    }
+                }
+                return result;
+            }
+        }
+    }
+
+    function _exec_not_test(ast, context) {
+        if (ast.type == "NOT_TEST" && ast.sons.length == 1) {
+            if (ast.sons[0].type == "NOT_TEST") {
+                return !_exec_not_test(ast.sons[0], context);
+            } else if (ast.sons[0].type == "COMPARISON") {
+                return _exec_comparison(ast.son[0], context);
             }
         }
     }
