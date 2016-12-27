@@ -5,39 +5,401 @@ Parser
 module.exports = Parser;
 
 
-function Parser() {
+function Parser(file) {
     var lexerClass = require('./tokenizer');
-    this.lexer = new lexerClass(file);
-    this.currentToken = lexer.getToken();
-    
+    var lexer = new lexerClass(file);
+    var currentToken = lexer.getToken();
+    var treeNodeClass = require('./treeNode');
+    var comp_op = ['<','>','==','>=','<=','<>','!=','in','is'];
+    var augassign = ['+=','-=','*=','/=','%=','&=','|=','^=','<<=','>>=','**=','//='];
+    var indent_level = 0;
+
     function _match(type) {
-        if (this.currentToken.type == type) {
-            val = this.currentToken.val;
-            this.currentToken = lexer.getToken();
-            return val; 
+        // console.log(currentToken);
+        if (currentToken.type == type) {
+            currentToken = lexer.getToken();
+            console.log(currentToken);
+            return true;
+        } else {
+            // console.log("Error");
+            // console.log("My Type: "+currentToken.type+" But expect: "+type);
+            return false;
+            //process.exit();
         }
     }
 
+    this._file_input = function() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "FILE_INPUT";
+        while (currentToken.type != "EOF") {
+            if (currentToken.type == "NEWLINE") {
+                _match("NEWLINE");
+                continue;
+            }
+            var stmt = _stmt();
+            //console.log(stmt);
+            treeNode.sons.push(stmt);
+        }
+        return treeNode;
+    }
+
     function _stmt() {
-        if (currentToken.type == "PRINT"):
-            return this._print_stmt();
-        else 
-            return this._expr_stmt();
+        var treeNode = new treeNodeClass();
+        treeNode.type = "STMT";
+        if (currentToken.type == "PRINT" || currentToken.type == "DEL" || currentToken.type == "NAME") {
+            treeNode.sons.push(_simple_stmt());
+        } else if (currentToken.type == "IF" || currentToken.type == "WHILE") {
+            treeNode.sons.push(_compound_stmt());
+        }
+        return treeNode;
+    }
+
+
+
+    function _simple_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "SIMPLE_STMT";
+        if (currentToken.type == "PRINT") {
+            treeNode.sons.push(_print_stmt());
+        } else if (currentToken.type == "DEL") {
+            treeNode.sons.push(_del_stmt());
+        } else if (currentToken.type == "NAME") {
+            treeNode.sons.push(_expr_stmt());
+        }
+        return treeNode;
+    }
+
+    function _compound_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "COMPOUND_STMT";
+        if (currentToken.type == "IF") {
+            treeNode.sons.push(_if_stmt());
+        } else if (currentToken.type == "WHILE") {
+            treeNode.sons.push(_while_stmt());
+        }
+        return treeNode;
+    }
+
+    function _while_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "WHILE_STMT";
+        _match("WHILE");
+        treeNode.sons.push(_test());
+        _match(":");
+        treeNode.sons.push(_suite());
+        return treeNode;
+    }
+
+    function _if_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "IF_STMT";
+        _match("IF");
+        treeNode.sons.push(_test());
+        _match(":");
+        treeNode.sons.push(_suite());
+        while (currentToken.type == "ELIF") {
+            _match("ELIF");
+            treeNode.sons.push(_test());
+            _match(":");
+            treeNode.sons.push(_suite());
+        }
+        if (currentToken.type == "ELSE") {
+            _match("ELSE");
+            _match(":");
+            treeNode.sons.push(_suite());
+        }
+        return treeNode;
+    }
+
+    function _suite() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "SUITE";
+        if (currentToken.type == "NEWLINE") {
+            _match("NEWLINE");
+            indent_level += 1;
+            do {
+                var i = 0;
+                while (currentToken.type == "INDENT") {
+                    _match("INDENT");
+                    i += 1;
+                }
+                if (i == indent_level) {
+                    treeNode.sons.push(_stmt());
+                } else if (i < indent_level) {
+                    indent_level -= 1
+                    return treeNode;
+                }
+                _match("NEWLINE");
+            } while (true);
+
+
+        } else {
+            treeNode.sons.push(_simple_stmt());
+        }
+    }
+
+    function _del_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "DEL_STMT";
+        _match("DEL");
+        treeNode.sons.push(_exprlist());
+        return treeNode;
+    }
+
+    function _print_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "PRINT_STMT";
+        _match("PRINT");
+        treeNode.sons.push(_testlist());
+        return treeNode;
     }
 
     function _expr_stmt() {
-        id_name = this._match('IDENTIFIER');
+        var treeNode = new treeNodeClass();
+        treeNode.type = "EXPR_STMT";
+        treeNode.sons.push(_testlist());
+        treeNode.sons.push(currentToken);
+        if (currentToken.type == "=") {
+            console.log("################");
+            _match("=");
+            treeNode.sons.push(_testlist());
+        } else if (augassign.indexOf(currentToken.type)!=-1) {
+            _match(currentToken.type);
+            treeNode.sons.push(_testlist());
+        }
+        return treeNode;
+    }
 
+    function _exprlist() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "EXPRLIST";
+        treeNode.sons.push(_expr());
+        while (currentToken.type == ',') {
+            _match(',');
+            treeNode.sons.push(_expr());
+        }
+        return treeNode;
+    }
+
+    function _testlist() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "TESTLIST";
+        // console.log("I am in testlist");
+        treeNode.sons.push(_test());
+        // console.log(currentToken);
+        while (currentToken.type == ',') {
+            _match(',');
+            treeNode.sons.push(_test());
+        }
+        return treeNode;
+    }
+
+    function _test() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "TEST";
+        // console.log("I am in test");
+        treeNode.sons.push(_or_test());
+        return treeNode;
+        /*
+        _match("NUMBER");
+        var treeNode = new treeNodeClass();
+        treeNode.type = "TEST";
+        return treeNode;
+        */
+    }
+
+    function _or_test() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "OR_TEST";
+        // console.log("I am in or_test");
+        treeNode.sons.push(_and_test());
+        while (currentToken.type == "OR") {
+            _match("OR");
+            treeNode.sons.push(_and_test());
+        }
+        return treeNode;
+    }
+
+    function _and_test() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "AND_TEST";
+        // console.log("I am in and_test");
+        treeNode.sons.push(_not_test());
+        while (currentToken.type == "AND") {
+            _match("AND");
+            treeNode.sons.push(_not_test());
+        }
+        return treeNode;
+    }
+
+    function _not_test() {
+        var treeNode = new treeNodeClass();
+        // console.log("I am in not test");
+        treeNode.type = "NOT_TEST";
+        if (currentToken.type == "NOT") {
+            _match("NOT");
+            treeNode.sons.push(_not_test());
+        } else {
+            treeNode.sons.push(_comparison());
+        }
+        return treeNode;
+    }
+
+    function _comparison() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "COMPARISON";
+        // console.log("I am in comparison");
+        treeNode.sons.push(_expr());
+        while (comp_op.indexOf(currentToken.type)!=-1) {
+            op = currentToken;
+            _match(currentToken.type);
+            treeNode.sons.push(op);
+            treeNode.sons.push(_expr());
+        }
+        return treeNode;
+    }
+
+    function _expr() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "EXPR";
+        // console.log("I am in expr");
+        treeNode.sons.push(_xor_expr());
+        while (currentToken.type == '|') {
+            _match('|');
+            treeNode.sons.push(_xor_expr());
+        }
+        return treeNode;
+    }
+
+    function _xor_expr() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "XOR_EXPR";
+        // console.log("I am in xor expr");
+        treeNode.sons.push(_and_expr());
+        while (currentToken.type == '^') {
+            _match('^');
+            treeNode.sons.push(_and_expr());
+        }
+        return treeNode;
+    }
+
+    function _and_expr() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "AND_EXPR";
+        // console.log("I am in and expr");
+        treeNode.sons.push(_shift_expr());
+        while (currentToken.type == '&') {
+            _match('&');
+            treeNode.sons.push(_shift_expr());
+        }
+        return treeNode;
+    }
+
+    function _shift_expr() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "SHIFT_EXPR";
+        // console.log("I am in shift expr");
+        treeNode.sons.push(_arith_expr());
+        while (currentToken.type == "<<" || currentToken.type == ">>") {
+            op = currentToken;
+            _match(currentToken.type);
+            treeNode.sons.push(op);
+            treeNode.sons.push(_arith_expr());
+        }
+        return treeNode;
+    }
+
+    function _arith_expr() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "ARITH_EXPR";
+        // console.log("I am in arith expr");
+        treeNode.sons.push(_term());
+        while (currentToken.type == '+' || currentToken.type == '-') {
+            op = currentToken;
+            _match(currentToken.type);
+            treeNode.sons.push(op);
+            treeNode.sons.push(_term());
+        }
+        return treeNode;
+    }
+
+    function _term() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "TERM";
+        // console.log("I am in term");
+        treeNode.sons.push(_factor());
+        while (currentToken.type == '*' || currentToken.type == '/' || currentToken.type == '%' || currentToken.type == '//') {
+            op = currentToken;
+            _match(currentToken.type);
+            treeNode.sons.push(op);
+            treeNode.sons.push(_factor());
+        }
+        return treeNode;
+    }
+
+    function _factor() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "FACTOR";
+        // console.log("I am in factor");
+        if (currentToken.type == '+' || currentToken.type == '-' || currentToken.type == '~') {
+            op = currentToken;
+            _match(currentToken.type);
+            treeNode.sons.push(op);
+            treeNode.sons.push(_factor());
+        } else {
+            treeNode.sons.push(_power());
+        }
+        return treeNode;
+    }
+
+    function _power() {
+        //Not finished
+        var treeNode = new treeNodeClass();
+        treeNode.type = "POWER";
+        // console.log("I am in power");
+        treeNode.sons.push(_atom());
+        return treeNode;
+    }
+
+    function _atom() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "ATOM";
+        // console.log("I am in atom");
+        if (currentToken.type == '(') {
+            _match('(');
+            var testlist = _testlist_comp();
+            treeNode.sons.push(testlist);
+            _match(')');
+        } else if (currentToken.type == '[') {
+            _match('[');
+            var testlist = _listmaker();
+            treeNode.sons.push(testlist);
+            _match(']');
+        } else if (currentToken.type == '{') {
+            _match('{');
+            var testlist = _dictorsetmaker();
+            treeNode.sons.push(testlist);
+            _match('}');
+        } else if (currentToken.type == "NAME") {
+            // console.log("I am in NAME");
+            var name = currentToken;
+            _match("NAME");
+            treeNode.sons.push(name);
+        } else if (currentToken.type == "NUMBER") {
+            // console.log("I am in NUMBER");
+            var number = currentToken;
+            _match("NUMBER");
+            treeNode.sons.push(number);
+        } else if (currentToken.type == "STRING") {
+            // do not support string+ currently
+            var strings = currentToken;
+            _match("STRING");
+            treeNode.sons.push(strings);
+        }
+        // console.log(treeNode);
+        return treeNode;
     }
 
 }
 
-var treeNodeClass = require('./treeNode');
-var treeNode = new treeNodeClass();
-
-treeNode.value = 1;
-treeNode.type = "number";
-treeNode.lineNumber = 1;
-
-console.log(treeNode.lineNumber);
 

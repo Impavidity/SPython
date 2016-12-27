@@ -12,7 +12,7 @@ if (arguments.length == 2) {
     //InterativeMode();
 } else
 if (arguments.length == 3) {
-    console.log("FileMode");
+    //console.log("FileMode");
     //console.log(arguments[2]);
     var fileMode = new fileModeClass(arguments[2]);
 } else {
