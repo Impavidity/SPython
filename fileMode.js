@@ -20,6 +20,9 @@ function FileMode(fileName) {
     var parserClass = require('./parser');
     var parser = new parserClass(file);
     var ast = parser._file_input();
-    checkTree(ast,0);
+    //checkTree(ast,0);
     //console.log(ast);
+    var engineClass = require("./engine");
+    var engine = new engineClass();
+    engine._exec_file_input(ast, context);
 }
