@@ -183,16 +183,33 @@ function Engine() {
         }
     }
 
-    function _exec_del_stmt(ast,context) {
+     function _exec_del_stmt(ast,context) {
         if(ast.type == "DEL_STMT"){
             if(ast.sons.length == 2){
-                if(ast.sons[1].type == "EXPRLIST")
-                     _exec_exprlist(ast.sons[1],context);
+                if(ast.sons[1].type == "EXPRLIST") {
+                    var str = _exec_exprlist(ast.sons[1], context);
+                    var arr = str.split(",");
+                    for(var i=0;i<arr.length;i++){
+                        s=Isin_Array(arr[i],context.allEntry);
+                        if(s)
+                            delete context.allEntry[s];
+                    }
+                }
             }
             else {
                 console.log("Del_Stmt Length Error");
             }
         }
+    }
+
+    function Isin_Array(stringToSearch, arrayToSearch) {
+        for (s = 0; s < arrayToSearch.length; s++) {
+            thisEntry = arrayToSearch[s].toString();
+            if (thisEntry == stringToSearch) {
+                return s;
+            }
+        }
+        return false;
     }
 
     function _exec_exprlist(ast,context) {
