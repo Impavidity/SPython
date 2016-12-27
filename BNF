@@ -29,8 +29,8 @@ exec_stmt: 'exec' expr ['in' test [',' test]]
 assert_stmt: 'assert' test [',' test]
 
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-while_stmt: 'while' test ':' suite ['else' ':' suite]
-for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
+while_stmt: 'while' test ':' suite 
+for_stmt: 'for' exprlist 'in' testlist ':' suite
 try_stmt: ('try' ':' suite
            ((except_clause ':' suite)+
             ['else' ':' suite]
@@ -55,7 +55,7 @@ arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%'|'//') factor)*
 factor: ('+'|'-'|'~') factor | power
 power: atom trailer* ['**' factor]
-atom: ('(' [yield_expr|testlist_comp] ')' |
+atom: ('(' [testlist_comp] ')' |
        '[' [listmaker] ']' |
        '{' [dictorsetmaker] '}' |
        '`' testlist1 '`' |
@@ -85,6 +85,12 @@ argument: test [comp_for] | test '=' test
 
 list_iter: list_for | list_if
 list_for: 'for' exprlist 'in' testlist_safe [list_iter]
+
+testlist_safe: old_test [(',' old_test)+ [',']]
+old_test: or_test | old_lambdef
+old_lambdef: 'lambda' [varargslist] ':' old_test
+
+
 list_if: 'if' old_test [list_iter]
 
 comp_iter: comp_for | comp_if

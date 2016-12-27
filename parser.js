@@ -48,7 +48,8 @@ function Parser(file) {
         treeNode.type = "STMT";
         if (currentToken.type == "PRINT" || currentToken.type == "DEL" || currentToken.type == "NAME") {
             treeNode.sons.push(_simple_stmt());
-        } else if (currentToken.type == "IF" || currentToken.type == "WHILE") {
+        } else if (currentToken.type == "IF" || currentToken.type == "WHILE" || currentToken.type == "FOR" ||
+            currentToken.type == "DEF" || currentToken.type == "CLASS") {
             treeNode.sons.push(_compound_stmt());
         }
         return treeNode;
@@ -76,7 +77,72 @@ function Parser(file) {
             treeNode.sons.push(_if_stmt());
         } else if (currentToken.type == "WHILE") {
             treeNode.sons.push(_while_stmt());
+        } else if (currentToken.type == "FOR") {
+            treeNode.sons.push(_for_stmt());
+        } else if (currentToken.type == "DEF") {
+            treeNode.sons.push(_funcdef());
+        } else if (currentToken.type == "CLASS") {
+            treeNode.sons.push(_classdef());
         }
+        return treeNode;
+    }
+
+    function _funcdef() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "FUNCDEF";
+        _match("DEF");
+        var name = currentToken;
+        _match("NAME");
+        treeNode.sons.push(name);
+        treeNode.sons.push(_parameters());
+        _match(":");
+        treeNode.sons.push(_suite());
+        return treeNode;
+    }
+
+    function _parameters() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "PARAMETERS";
+        _match("(");
+        if (currentToken.type != ")") {
+            treeNode.sons.push(_varargslist());
+        }
+        _match(")");
+        return treeNode;
+    }
+
+    function _varargslist() {
+        //unfinished
+    }
+
+    function _classdef() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "CLASSDEF";
+        _match("CLASS");
+        var name = currentToken;
+        _match("NAME");
+        treeNode.sons.push(name);
+        if (currentToken.type == '(') {
+            _match('(');
+            if (currentToken.type != ')') {
+                treeNode.sons.push(_testlist());
+            }
+            _match(')');
+        }
+        _match(':');
+        treeNode.sons.push(_suite());
+        return treeNode();
+    }
+
+    function _for_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "FOR_STMT";
+        _match("FOR");
+        treeNode.sons.push(_exprlist());
+        _match("IN");
+        treeNode.sons.push(_testlist());
+        _match(":");
+        treeNode.sons.push(_suite());
         return treeNode;
     }
 
@@ -160,7 +226,6 @@ function Parser(file) {
         treeNode.sons.push(_testlist());
         treeNode.sons.push(currentToken);
         if (currentToken.type == "=") {
-            console.log("################");
             _match("=");
             treeNode.sons.push(_testlist());
         } else if (augassign.indexOf(currentToken.type)!=-1) {
@@ -399,6 +464,79 @@ function Parser(file) {
         // console.log(treeNode);
         return treeNode;
     }
+
+    function _testlist_comp() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "TESTLIST_COMP";
+        treeNode.sons.push(_test());
+        if (currentToken.type == "FOR") {
+            treeNode.sons.push(_comp_for()); // unfinished
+        } else if (currentToken.type == ',') {
+            _match(',');
+            treeNode.sons.push(_test());
+        }
+        return treeNode;
+    }
+
+    function _listmaker() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "LISTMAKER";
+        treeNode.sons.push(_test());
+        if (currentToken.type == "FOR") {
+            treeNode.sons.push(_list_for()); //unfinished
+        } else if (currentToken.type == ',') {
+            while (currentToken.type == ',') {
+                _match(',');
+                treeNode.sons.push(_test());    
+            }
+        }
+        return treeNode;
+    }
+
+    function _list_for() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "LIST_FOR";
+        _match("FOR");
+        treeNode.sons.push(_exprlist());
+        _match("IN");
+        treeNode.sons.push(_testlist_safe());
+        if (currentToken.type == "FOR" || currentToken.type == "IF") {
+            treeNode.sons.push(_list_iter());
+        }
+        return treeNode;
+    }
+
+    function _list_iter() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "LIST_ITER";
+        if (currentToken.type == "FOR") {
+            treeNode.sons.push(_list_for());
+        } else if (currentToken.type == "IF") {
+            treeNode.sons.push(_list_if());
+        }
+        return treeNode;
+    }
+
+    function _list_if() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "LIST_IF";
+        _match("IF");
+        treeNode.sons.push(_old_test());
+        if (currentToken.type == "FOR" || currentToken.type == "IF") {
+            treeNode.sons.push(_list_iter());
+        }
+        return treeNode;
+    }
+
+    function _old_test() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "OLD_TEST";
+        treeNode.sons.push(_or_test()); // lambdef unfinished
+        return treeNode;
+    }
+
+
+
 
 }
 

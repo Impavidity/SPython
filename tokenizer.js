@@ -92,7 +92,8 @@ function Lexer(inputFile) {
         // console.log("After EOF");
 
         //Dirty work
-        if (lastChar == ',' || lastChar == ':') {
+        if (lastChar == ',' || lastChar == ':' || lastChar == '[' || lastChar == ']' ||
+            lastChar == '{' || lastChar == '}' || lastChar == '(' || lastChar == ')') {
             treeNode.type = lastChar;
             treeNode.lineNumber = lineNum;
             lastChar = getLastChar();
@@ -117,6 +118,9 @@ function Lexer(inputFile) {
             if (identifierStr == "is") treeNode.type = "IS";
             if (identifierStr == "elif") treeNode.type = "ELIF";
             if (identifierStr == "else") treeNode.type = "ELSE";
+            if (identifierStr == "for") treeNode.type = "FOR";
+            if (identifierStr == "def") treeNode.type = "DEF";
+            if (identifierStr == "class") treeNode.type = "CLASS";
             return treeNode;
 
         }

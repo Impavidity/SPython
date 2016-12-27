@@ -7,9 +7,9 @@ function FileMode(fileName) {
     function checkTree(ast,num) {
 
         for (var i=0; i<num; i++) {
-            process.stdout.write("----");
+            process.stdout.write("--");
         }
-        console.log(ast.type);
+        console.log(ast.type+"   "+ast.value);
         for (var item in ast.sons) {
             checkTree(ast.sons[item],num+1);
         }

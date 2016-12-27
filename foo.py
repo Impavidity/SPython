@@ -11,3 +11,8 @@ if a>b:
 while a<b:
 	while c<d:
 		b += 1
+for i in li:
+	print a
+f = (a+b)*c
+g = [a,b,c,d,5,6,7,8]
+
