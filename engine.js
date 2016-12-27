@@ -263,12 +263,111 @@ function Engine() {
         return //
     }
 
-    function _exec_expr(ast,context) {
+   function _exec_expr(ast,context) {
         if(ast.type == "EXPR"){
-
+            var expr = new SObject();                       //对象创建方法有疑问
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key].type == "XOR_EXPR")
+                    arr.push(_exec_xor_expr(ast.sons[key],context));
+            }
+            expr = RES_comparison(arr);
+            return expr;
         }
     }
 
+    function _exec_xor_expr(ast,context) {
+        if(ast.type == "XOR_EXPR"){
+            var xor_expr = new SObject();
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key] == "AND_EXPR")
+                    arr.push(_exec_and_expr(ast.sons[key],context));
+            }
+            xor_expr = RES_comparison(arr);
+            return xor_expr;
+        }
+    }
+
+    function _exec_and_expr(ast,context) {
+        if(ast.type == "AND_EXPR"){
+            var and_expr = new SObject();
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key] == "SHIFT_EXPR")
+                    arr.push(_exec_shift_expr(ast.sons[key],context));
+            }
+            and_expr = RES_comparison(arr);
+            return and_expr;
+        }
+    }
+
+    function _exec_shift_expr(ast,context) {
+        if(ast.type == "SHIFT_EXPR"){
+            var shift_expr = new SObject();
+            var arr = new Array();
+            for(var key in ast.sons) {
+                if (ast.sons[key] == "ARITH_EXPR")
+                    arr.push(_exec_arith_expr(ast.sons[key], context));
+            }
+            shift_expr = RES_comparison(arr);
+            return shift_expr;
+        }
+    }
+
+    function _exec_arith_expr(ast,context) {
+        if(ast.type == "ARITH_EXPR"){
+            var arith_expr = new  SObject();
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key] == "TERM")
+                    arr.push(_exec_term(ast.sons[key],context));
+            }
+            arith_expr = RES_comparison(arr);
+            return arith_expr;
+        }
+    }
+
+    function _exec_term(ast,context) {
+        if(ast.type == "TERM"){
+            var term = new SObject();
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key] == "FACTOR")
+                    arr.push(_exec_factor(ast.sons[key],context));
+            }
+            term = RES_comparison(arr);
+            return term;
+        }
+    }
+    
+    function _exec_factor(ast,context) {
+        if(ast.type == "FACTOR"){
+            var factor = new SObject();
+            var arr = new Array();
+            if(ast.sons.length == 1)
+                arr.push(_exec_atom(ast.sons[0],context));
+            else if(ast.sons.length == 2){
+                arr.push(ast.sons[0],context);
+                _exec_factor(ast.sons[1],context);
+            }
+            factor = RES_comparison(arr);
+            return factor;
+        }
+    }
+    
+    function _exec_atom(ast,context) {
+        if(ast.type == "ATOM"){
+            // list tuple 这一块不会
+            var atom = new SObject();
+            if(ast.sons.length == 1) {
+                    atom.type = ast.sons[0].type;
+                    atom.value = ast.sons[0].value;
+            }
+            return atom;
+        }
+    }
+    
     function _exec_pass_stmt(ast,context) {
         if(ast.type == "PASS_STMT"){
             console.log("pass");
@@ -293,4 +392,16 @@ function Engine() {
         }
     }
     
+    function _exec_comparison(ast,context) {
+        if(ast.type == "COMPARISON"){
+            arr = new array();
+            for(i=0;i<=ast.sons.length;i++) {
+               if(ast.sons[i].type == "EXPR")
+                   arr.push(_exec_expr(ast.sons[i], context));
+               else if(ast.sons[i].type == "COMP_ON")
+                   arr.push(_exec_comp_on(a.sons[i],context));
+            }
+            return arr;
+        }
+    }
 }
