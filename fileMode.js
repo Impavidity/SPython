@@ -24,7 +24,9 @@ function FileMode(fileName) {
     //console.log(ast);
     
     var ObjectClass = require("./Object");
-    var objectClass = new ObjectClass();
+    var context = new ObjectClass.SActiveRecord();
+    console.log(context);
+
     /*
     var engineClass = require("./engine");
     var engine = new engineClass();
