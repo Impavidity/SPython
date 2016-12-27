@@ -345,6 +345,21 @@ function Engine() {
         }
     }
     
+    function _exec_factor(ast,context) {
+        if(ast.type == "FACTOR"){
+            var factor = new SObject();
+            var arr = new Array();
+            if(ast.sons.length == 1)
+                arr.push(_exec_power(ast.sons[0],context));
+            else if(ast.sons.length == 2){
+                arr.push(ast.sons[0],context);
+                _exec_factor(ast.sons[1],context);
+            }
+            factor = RES_comparison(arr);
+            return factor;
+        }
+    }
+    
     function _exec_pass_stmt(ast,context) {
         if(ast.type == "PASS_STMT"){
             console.log("pass");
