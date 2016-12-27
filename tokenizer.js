@@ -65,6 +65,7 @@ function Lexer(inputFile) {
     this.getToken = function() {
         var identifierStr; // identifier: [a-zA-Z][a-zA-Z0-9]*
         var numStr;
+        var stringStr;
         var opStr;
         var treeNode = new treeNodeClass();
 
@@ -101,6 +102,25 @@ function Lexer(inputFile) {
         }
         //console.log("After ,");
 
+        if (lastChar == "'") {
+            stringStr = "";
+            while ((lastChar=getLastChar())!="'")
+                stringStr += lastChar;
+            lastChar = getLastChar();
+            treeNode.type = "STRING";
+            treeNode.lineNumber = lineNum;
+            return treeNode;
+        }
+
+        if (lastChar == '"') {
+            stringStr = "";
+            while ((lastChar=getLastChar())!='"')
+                stringStr += lastChar;
+            lastChar = getLastChar();
+            treeNode.type = "STRING";
+            treeNode.lineNumber = lineNum;
+            return treeNode;
+        }
 
         if (isalpha(lastChar)) {
             identifierStr = lastChar;
