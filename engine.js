@@ -267,9 +267,42 @@ function Engine() {
         return //
     }
 
-    function _exec_expr(ast,context) {
+   function _exec_expr(ast,context) {
         if(ast.type == "EXPR"){
+            var expr = new SObject();                       //对象创建方法有疑问
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key].type == "XOR_EXPR")
+                    arr.push(_exec_xor_expr(ast.sons[key],context));
+            }
+            expr = RES_comparison(arr);
+            return expr;
+        }
+    }
 
+    function _exec_xor_expr(ast,context) {
+        if(ast.type == "XOR_EXPR"){
+            var xor_expr = new SObject();
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key] == "AND_EXPR")
+                    arr.push(_exec_and_expr(ast.sons[key],context));
+            }
+            xor_expr = RES_comparison(arr);
+            return xor_expr;
+        }
+    }
+
+    function _exec_and_expr(ast,context) {
+        if(ast.type == "AND_EXPR"){
+            var and_expr = new SObject();
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key] == "SHIFT_EXPR")
+                    arr.push(_exec_shift_expr(ast.sons[key],context));
+            }
+            and_expr = RES_comparison(arr);
+            return and_expr;
         }
     }
 
