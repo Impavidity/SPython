@@ -118,6 +118,7 @@ function Lexer(inputFile) {
                 stringStr += lastChar;
             lastChar = getLastChar();
             treeNode.type = "STRING";
+            treeNode.value = stringStr;
             treeNode.lineNumber = lineNum;
             return treeNode;
         }

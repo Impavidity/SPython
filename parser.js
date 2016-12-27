@@ -112,7 +112,54 @@ function Parser(file) {
     }
 
     function _varargslist() {
-        //unfinished
+        var treeNode = new treeNodeClass();
+        treeNode.type = "VARARGSLIST";
+        treeNode.sons.push(_fpdef());
+        if (currentToken.type == "=") {
+            treeNode.sons.push(currentToken);
+            _match('=');
+            treeNode.sons.push(_test());
+        }
+        while (currentToken.type == ',') {
+            _match(',');
+            if (currentToken.type == '*') {
+                treeNode.sons.push(currentToken);
+                _match('*');
+                var name = currentToken;
+                _match("NAME");
+                treeNode.sons.push(name);
+            } else if (currentToken.type == '**') {
+                treeNode.sons.push(currentToken);
+                _match('**');
+                var name = currentToken;
+                _match("NAME");
+                treeNode.sons.push(name);
+            } else {
+                treeNode.sons.push(_fpdef());
+                if (currentToken.type == "=") {
+                    treeNode.sons.push(currentToken);
+                    _match();
+                    treeNode.sons.push(_test());
+                }
+            }
+        }
+        return treeNode;
+    }
+
+    function _argument() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "ARGUMENT";
+        treeNode.sons.push(_test());
+        if (currentToken.type == "=") {
+            _match("=");
+            treeNode.sons.push(_test());
+        } else if (currentToken.type == "FOR") {
+            treeNode.sons.push(_comp_for());
+        }
+    }
+
+    function _arglist() {
+        // unfinished
     }
 
     function _classdef() {
@@ -423,6 +470,32 @@ function Parser(file) {
         treeNode.type = "POWER";
         // console.log("I am in power");
         treeNode.sons.push(_atom());
+        if (currentToken.type == '(' || currentToken.type == '[' || currentToken.type == '.') {
+            treeNode.sons.push(_trailer());
+        }
+        return treeNode;
+    }
+
+    function _trailer() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "TRAILER";
+        if (currentToken.type == '(') {
+            _match('(');
+            if (currentToken.type != ')') {
+                treeNode.sons.push(_arglist());
+            }
+            if (currentToken.type == ')')
+                _match(')')
+        } else if (currentToken.type == '[') {
+            _match('[');
+            treeNode.sons.push(_subscriptlist());
+            _match(']');
+        } else if (currentToken.type == '.') {
+            _match('.');
+            var name = currentToken;
+            _match("NAME");
+            treeNode.sons.push(name);
+        }
         return treeNode;
     }
 
