@@ -1,11 +1,17 @@
 /*
-Engine
+Engine : Yuhao, Xuefeng & Peng
 */
 
 module.exports = Engine;
 
 function Engine() {
 
+    var ObjectClass = require("./Object");
+    var ResFuncSet = require("./Res");
+
+    /*
+    Reviewed
+    */
     this._exec_file_input = function(ast, context) {
         if (ast.type == "INPUT_FILE") {
             for (var key in ast.sons) {
@@ -15,6 +21,9 @@ function Engine() {
         }
     }
 
+    /*
+    Reviewed
+    */
     function _exec_stmt(ast, context) {
         if (ast.type == "STMT") {
             if (ast.sons.length == 1) {
@@ -28,6 +37,9 @@ function Engine() {
         }
     }
     
+    /*
+    Reviewed
+    */
     function _exec_compound_stmt(ast, context) {
         if (ast.type == "COMPOUND_STMT") {
             if (ast.sons.length == 1) {
@@ -37,44 +49,48 @@ function Engine() {
                     _exec_while_stmt(ast.sons[0], context);
                 else if (ast.sons[0].type == "FOR_STMT")
                     _exec_for_stmt(ast.sons[0], context);
-                else if (ast.sons[0].type == "TRY_STMT")
-                    _exec_try_stmt(ast.sons[0], context);
-                else if (ast.sons[0].type == "WITH_STMT")
-                    _exec_with_stmt(ast.sons[0], context);
                 else if (ast.sons[0].type == "FUNCDEF")
                     _exec_funcdef(ast.sons[0], context);
                 else if (ast.sons[0].type == "CLASSDEF")
                     _exec_classdef(ast.sons[0], context);
-                else if (ast.sons[0].type == "DECORATED")
-                    _exec_decorated(ast.sons[0], context);
             }
         }
     }
-
+    /*
+    Revised by Peng
+    Please reflect the Modified part
+    */
     function _exec_if_stmt(ast, context) {
         if (ast.type == "IF_STMT") {
             for (var key = 0; key < ast.sons.length; key += 2) {
                 if (ast.sons[key].type == "TEST") {
-                    if (_exec_test(ast.sons[key], context)) {
+                    if (_exec_test(ast.sons[key], context).value) {
                         if (ast.sons[key+1].type == "SUITE") {
                             _exec_suite(ast.sons[key+1], context);
                             break;
                         }
                     }
                 }
-            }
-            if (key == ast.sons.length) {
-                if (ast.sons[key].type == "SUITE") {
-                    _exec_suite(ast.sons[key], context);
+            } 
+            /*Modified*/
+            if (key >= ast.sons.length) {
+                var index = ast.sons.length-1;
+                if (ast.sons[index].type == "SUITE") {
+                    _exec_suite(ast.sons[index], context);
                 }
             }
         }
     }
 
+    /*
+    Revisied by Peng
+    add .value
+    need to debug
+    */
     function _exec_while_stmt(ast, context) {
         if (ast.type == "WHILE_STMT" && ast.sons.length == 2) {
             if (ast.sons[0].type == "TEST") {
-                while (_exec_test(ast.sons[0], context)) {
+                while (_exec_test(ast.sons[0], context).value) {
                     if (ast.sons[1].type == "SUITE") {
                         _exec_suite(ast.sons[1], context);
                     }
@@ -83,52 +99,10 @@ function Engine() {
         }
     }
     
-    function _exec_test(ast, context) {
-        if (ast.type == "TEST" && ast.sons.length == 1) {
-            if (ast.sons[0].type == "OR_TEST") {
-                return _exec_or_test(ast.sons[0], context);
-            }
-        }
-    }
 
-    function _exec_or_test(ast, context) {
-        if (ast.type == "OR_TEST" && ast.sons.length >= 1) {
-            if (ast.sons[0].type == "AND_TEST") {
-                var result = _exec_and_test(ast.sons[0], context);
-                for (var key = 1; key < ast.sons.length; key++) {
-                    if (ast.sons[key].type == "AND_TEST") {
-                        result = result || _exec_and_test(ast.sons[key], context);
-                    }
-                }
-                return result;
-            }
-        }
-    }
-
-    function _exec_and_test(ast, context) {
-        if (ast.type == "AND_TEST" && ast.sons.length >= 1) {
-            if (ast.sons[0].type == "NOT_TEST") {
-                var result = _exec_not_test(ast.sons[0], context);
-                for (var key = 1; key < ast.sons.length; key++) {
-                    if (ast.sons[key].type == "NOT_TEST") {
-                        result = result && _exec_not_test(ast.sons[key], context);
-                    }
-                }
-                return result;
-            }
-        }
-    }
-
-    function _exec_not_test(ast, context) {
-        if (ast.type == "NOT_TEST" && ast.sons.length == 1) {
-            if (ast.sons[0].type == "NOT_TEST") {
-                return !_exec_not_test(ast.sons[0], context);
-            } else if (ast.sons[0].type == "COMPARISON") {
-                return _exec_comparison(ast.son[0], context);
-            }
-        }
-    }
-    
+    /*
+    Reviewed
+    */
     //simle stmt
     function _exec_simple_stmt(ast, context) {
         if (ast.type == "SIMLE_STMT") {
@@ -143,8 +117,6 @@ function Engine() {
                     _exec_pass_stmt(ast.sons[0], context);
                 else if (ast.sons[0].type == "FLOW_STMT")
                     _exec_flow_stmt(ast.sons[0], context);
-                else if (ast.sons[0].type == "IMPORT_STMT")
-                    _exec_import_stmt(ast.sons[0], context);
                 else if (ast.sons[0].type == "GLOBAL_STMT")
                     _exec_global_stmt(ast.sons[0], context);
                 else if (ast.sons[0].type == "EXEC_STMT")
@@ -190,12 +162,14 @@ function Engine() {
         return //
     }
 
-
+    /*
+    Review: Peng
+    */
     function _exec_test(ast, context) {
         if (ast.type == "TEST") {
             if (ast.sons.length == 1) {
                 if (ast.sons[0].type == "OR_TEST")
-                    _exec_or_test(ast.sons[0], context);
+                    return _exec_or_test(ast.sons[0], context);
             }
             else {
                 console.log("Test Length Error");
@@ -203,18 +177,92 @@ function Engine() {
         }
     }
 
+    /*
+    Revised by : Peng
+    */
     function _exec_or_test(ast,context) {
+        var result;
+        var args = new Array();
         if(ast.type == "OR_TEST"){
-            if(ast.sons[0].type == "AND_TEST")
-                _exec_and_test(ast.sons[0],context);
-           // if(ast.sons.length > 1)
+            for (var key in ast.sons) {
+                if (ast.sons[key].type == "AND_TEST")
+                    args.push(_exec_and_test(ast.sons[key], context));
+            }
+            result = ResFuncSet.RES_or_test(args);
+            return result;
+        } else {
+            console.log("Exec Or Test Error");
         }
 
     }
 
+    /*
+    Revised by : Peng
+    */
+    function _exec_and_test(ast, context) {
+        var result;
+        var args = new Array();
+        if (ast.type == "AND_TEST") {
+            for (var key in ast.sons) {
+                if (ast.sons[key].type == "NOT_TEST") {
+                    args.push(_exec_not_test(ast.sons[key], context));
+                }
+            }
+            result = ResFuncSet.RES_and_test(args);
+            return result;
+        }
+    }
+
+    /*
+    Revised by Peng
+    */
+    function _exec_not_test(ast, context) {
+        var result;
+        var args = new Array();
+        if (ast.type == "NOT_TEST" && ast.sons.length == 1) {
+            if (ast.sons[0].type == "NOT_TEST") {
+                result = ResFuncSet.RES_not_test(_exec_not_test(ast.sons[0], context));
+                return result;
+            } else if (ast.sons[0].type == "COMPARISON") {
+                return _exec_comparison(ast.son[0], context));
+            }
+        }
+    }
+
+    /*
+    Revised by Peng
+    */
+    function _exec_comparison(ast,context) {
+        var result;
+        var args = new Array();
+        if(ast.type == "COMPARISON"){
+            for(i=0;i<=ast.sons.length;i++) {
+               if(ast.sons[i].type == "EXPR")
+                   args.push(_exec_expr(ast.sons[i], context));
+               else if(ast.sons[i].type == "COMP_OP")
+                   args.push(_exec_comp_op(a.sons[i],context));
+            }
+            result = ResFuncSet.RES_comparison(args);
+            return result;
+        }
+    }
+
+    /*
+    written by Peng
+    */
+    function _exec_comp_op(ast, context) {
+        var result = new ObjectClass.SObject();
+        result.type = "Option";
+        result.value = ast.type;
+        return result;
+    }
+
+
+
+
     function _exec_print_stmt(ast,context) {
         if(ast.type == "PRINT_STMT"){
-            if(ast.sons.length == 2) {
+            if(ast.sons.length == 1) {
                 if (ast.sons[0].type == "testlist")
                     console.log("print" + _exec_testlist(ast.sons[0], context));
             }
@@ -263,96 +311,138 @@ function Engine() {
         return //
     }
 
-   function _exec_expr(ast,context) {
+    /*
+    Revised by Peng
+    */
+    function _exec_expr(ast,context) {
+        var result;
+        var args = new Array();
         if(ast.type == "EXPR"){
-            var expr = new SObject();                       //对象创建方法有疑问
-            var arr = new Array();
             for(var key in ast.sons){
                 if(ast.sons[key].type == "XOR_EXPR")
-                    arr.push(_exec_xor_expr(ast.sons[key],context));
+                    args.push(_exec_xor_expr(ast.sons[key],context));
             }
-            expr = RES_comparison(arr);
-            return expr;
+            result = ResFuncSet.RES_expr(args);
+            return result;
         }
     }
 
+    /*
+    Revised by Peng
+    */
     function _exec_xor_expr(ast,context) {
+        var result;
+        var args = new Array();
         if(ast.type == "XOR_EXPR"){
-            var xor_expr = new SObject();
-            var arr = new Array();
             for(var key in ast.sons){
-                if(ast.sons[key] == "AND_EXPR")
-                    arr.push(_exec_and_expr(ast.sons[key],context));
+                if(ast.sons[key].type == "AND_EXPR")
+                    args.push(_exec_and_expr(ast.sons[key],context));
             }
-            xor_expr = RES_comparison(arr);
-            return xor_expr;
+            result = ResFuncSet.RES_xor_expr(arr);
+            return result;
         }
     }
 
+    /*
+    Revised by Peng
+    */
     function _exec_and_expr(ast,context) {
+        var result;
+        var args = new Array();
         if(ast.type == "AND_EXPR"){
-            var and_expr = new SObject();
-            var arr = new Array();
             for(var key in ast.sons){
-                if(ast.sons[key] == "SHIFT_EXPR")
-                    arr.push(_exec_shift_expr(ast.sons[key],context));
+                if(ast.sons[key].type == "SHIFT_EXPR")
+                    args.push(_exec_shift_expr(ast.sons[key],context));
             }
-            and_expr = RES_comparison(arr);
-            return and_expr;
+            result = ResFuncSet.RES_and_test(args);
+            return result;
         }
     }
 
+
+    /*
+    Revised by Peng
+    */
     function _exec_shift_expr(ast,context) {
+        var result;
+        var args = new Array();
         if(ast.type == "SHIFT_EXPR"){
-            var shift_expr = new SObject();
-            var arr = new Array();
             for(var key in ast.sons) {
-                if (ast.sons[key] == "ARITH_EXPR")
-                    arr.push(_exec_arith_expr(ast.sons[key], context));
+                if (ast.sons[key].type == "ARITH_EXPR")
+                    args.push(_exec_arith_expr(ast.sons[key], context));
+                else if (ast.sons[key].type == "<<" || ast.sons[key].type == ">>") {
+                    var op = new ObjectClass.SObject();
+                    op.type = "Option";
+                    op.value = ast.sons[key].type;
+                    args.push(op);
+                }
+                    
             }
-            shift_expr = RES_comparison(arr);
-            return shift_expr;
+            result = RES_shift_expr(args);
+            return result;
         }
     }
 
+    /*
+    Revised by : Peng
+    */
     function _exec_arith_expr(ast,context) {
+        var result;
+        var args = new Array();
         if(ast.type == "ARITH_EXPR"){
-            var arith_expr = new  SObject();
-            var arr = new Array();
             for(var key in ast.sons){
-                if(ast.sons[key] == "TERM")
-                    arr.push(_exec_term(ast.sons[key],context));
+                if(ast.sons[key].type == "TERM")
+                    args.push(_exec_term(ast.sons[key],context));
+                else if (ast.sons[key].type == '+' || ast.sons[key].type == '-') {
+                    var op = new ObjectClass.SObject();
+                    op.type = "Option";
+                    op.value = ast.sons[key].type;
+                    args.push(op);
+                }
             }
-            arith_expr = RES_comparison(arr);
-            return arith_expr;
+            result = ResFuncSet.RES_arith_expr(args);
+            return result;
         }
     }
 
+    /*
+    Revised by Peng
+    */
     function _exec_term(ast,context) {
+        var result;
+        var args = new Array();
         if(ast.type == "TERM"){
-            var term = new SObject();
-            var arr = new Array();
             for(var key in ast.sons){
-                if(ast.sons[key] == "FACTOR")
-                    arr.push(_exec_factor(ast.sons[key],context));
+                if(ast.sons[key].type == "FACTOR")
+                    args.push(_exec_factor(ast.sons[key],context));
             }
-            term = RES_comparison(arr);
-            return term;
+            result = ResFuncSet.RES_term(args);
+            return result;
         }
     }
     
+    /*
+    Revised by Peng
+    */
     function _exec_factor(ast,context) {
+        var result;
+        var args = new Array();
         if(ast.type == "FACTOR"){
-            var factor = new SObject();
-            var arr = new Array();
-            if(ast.sons.length == 1)
-                arr.push(_exec_atom(ast.sons[0],context));
-            else if(ast.sons.length == 2){
-                arr.push(ast.sons[0],context);
-                _exec_factor(ast.sons[1],context);
+            for (var key in ast.sons) {
+                if (ast.sons[key].type == "FACTOR") {
+                    args.push(_exec_factor(ast.sons[key], context));
+                } else if (ast.sons[key].type == "+" || 
+                    ast.sons[key].type == "-" || ast.sons[key].type == "~") {
+                    var op = new ObjectClass.SObject();
+                    op.type = "Option";
+                    op.value = ast.sons[key].type;
+                    args.push(op);
+                } else if (ast.sons[key].type == "POWER") {
+                    args.push(_exec_power(ast.sons[key], context));
+                }
             }
-            factor = RES_comparison(arr);
-            return factor;
+            result = RES_factor(arr);
+            return result;
         }
     }
     
@@ -392,16 +482,5 @@ function Engine() {
         }
     }
     
-    function _exec_comparison(ast,context) {
-        if(ast.type == "COMPARISON"){
-            arr = new array();
-            for(i=0;i<=ast.sons.length;i++) {
-               if(ast.sons[i].type == "EXPR")
-                   arr.push(_exec_expr(ast.sons[i], context));
-               else if(ast.sons[i].type == "COMP_ON")
-                   arr.push(_exec_comp_on(a.sons[i],context));
-            }
-            return arr;
-        }
-    }
+
 }
