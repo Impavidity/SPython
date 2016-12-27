@@ -62,6 +62,11 @@ function Lexer(inputFile) {
         } else return false;
     }
 
+    function isiden(ch) {
+        if (isalpha(ch) || ch == '_') return true;
+        else return false;
+    }
+
     this.getToken = function() {
         var identifierStr; // identifier: [a-zA-Z][a-zA-Z0-9]*
         var numStr;
@@ -94,7 +99,8 @@ function Lexer(inputFile) {
 
         //Dirty work
         if (lastChar == ',' || lastChar == ':' || lastChar == '[' || lastChar == ']' ||
-            lastChar == '{' || lastChar == '}' || lastChar == '(' || lastChar == ')') {
+            lastChar == '{' || lastChar == '}' || lastChar == '(' || lastChar == ')' ||
+            lastChar == '.') {
             treeNode.type = lastChar;
             treeNode.lineNumber = lineNum;
             lastChar = getLastChar();
@@ -123,7 +129,7 @@ function Lexer(inputFile) {
             return treeNode;
         }
 
-        if (isalpha(lastChar)) {
+        if (isiden(lastChar)) {
             identifierStr = lastChar;
             while (isalnum(lastChar=getLastChar()))
                 identifierStr += lastChar;

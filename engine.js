@@ -6,7 +6,7 @@ module.exports = Engine;
 
 function Engine() {
 
-    this._exec_input_file = function(ast, context) {
+    this._exec_file_input = function(ast, context) {
         if (ast.type == "INPUT_FILE") {
             for (var key in ast.sons) {
                 if (ast.sons[key].type == "STMT")
@@ -26,10 +26,6 @@ function Engine() {
                 console.log("Length Error");
             }
         }
-    }
-
-    function _exec_simple_stmt(ast, context) {
-        
     }
     
     function _exec_compound_stmt(ast, context) {
@@ -219,8 +215,8 @@ function Engine() {
     function _exec_print_stmt(ast,context) {
         if(ast.type == "PRINT_STMT"){
             if(ast.sons.length == 2) {
-                if (ast.sons[1].type == "testlist")
-                    console.log("print" + _exec_testlist(ast.sons[1], context));
+                if (ast.sons[0].type == "testlist")
+                    console.log("print" + _exec_testlist(ast.sons[0], context));
             }
             else {
                 console.log("Print_Stmt Length Error");

@@ -46,7 +46,9 @@ function Parser(file) {
     function _stmt() {
         var treeNode = new treeNodeClass();
         treeNode.type = "STMT";
-        if (currentToken.type == "PRINT" || currentToken.type == "DEL" || currentToken.type == "NAME") {
+        if (currentToken.type == "PRINT" || currentToken.type == "DEL" || 
+            currentToken.type == "NAME" || currentToken.type == "BREAK" ||
+            currentToken.type == "CONTINUE" || currentToken.type == "RETURN") {
             treeNode.sons.push(_simple_stmt());
         } else if (currentToken.type == "IF" || currentToken.type == "WHILE" || currentToken.type == "FOR" ||
             currentToken.type == "DEF" || currentToken.type == "CLASS") {
@@ -66,7 +68,52 @@ function Parser(file) {
             treeNode.sons.push(_del_stmt());
         } else if (currentToken.type == "NAME") {
             treeNode.sons.push(_expr_stmt());
+        } else if (currentToken.type == "BREAK") {
+            treeNode.sons.push(_flow_stmt());
+        } else if (currentToken.type == "CONTINUE") {
+            treeNode.sons.push(_flow_stmt());
+        } else if (currentToken.type == "RETURN") {
+            treeNode.sons.push(_flow_stmt());
         }
+        return treeNode;
+    }
+
+    function _flow_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "FLOW_STMT";
+        if (currentToken.type == "BREAK") {
+            treeNode.sons.push(_break_stmt());
+        } else if (currentToken.type == "CONTINUE") {
+            treeNode.sons.push(_continue_stmt());
+        } else if (currentToken.type == "RETURN") {
+            treeNode.sons.push(_return_stmt());
+        }
+        return treeNode;
+    }
+
+    function _break_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "BREAK_STMT";
+        treeNode.sons.push(currentToken);
+        _match("BREAK");
+        return treeNode;
+    }
+
+    function _continue_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "CONTINUE_STMT";
+        treeNode.sons.push(currentToken);
+        _match("CONTINUE");
+        return treeNode;
+    }
+
+    function _return_stmt() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "RETURN_STMT";
+        treeNode.sons.push(currentToken);
+        _match("RETURN");
+        if (currentToken.type != "NEWLINE")
+            treeNode.sons.push(_testlist());
         return treeNode;
     }
 
@@ -114,34 +161,80 @@ function Parser(file) {
     function _varargslist() {
         var treeNode = new treeNodeClass();
         treeNode.type = "VARARGSLIST";
-        treeNode.sons.push(_fpdef());
-        if (currentToken.type == "=") {
+        if (currentToken.type == "*") {
             treeNode.sons.push(currentToken);
-            _match('=');
-            treeNode.sons.push(_test());
-        }
-        while (currentToken.type == ',') {
-            _match(',');
-            if (currentToken.type == '*') {
-                treeNode.sons.push(currentToken);
-                _match('*');
-                var name = currentToken;
-                _match("NAME");
-                treeNode.sons.push(name);
-            } else if (currentToken.type == '**') {
+            _match("*");
+            treeNode.sons.push(currentToken);
+            _match("NAME");
+            if (currentToken.type == ',') {
+                _match(',');
                 treeNode.sons.push(currentToken);
                 _match('**');
-                var name = currentToken;
+                treeNode.sons.push(currentToken);
                 _match("NAME");
-                treeNode.sons.push(name);
-            } else {
-                treeNode.sons.push(_fpdef());
-                if (currentToken.type == "=") {
+            }
+        } else if (currentToken.type == "**") {
+            treeNode.sons.push(currentToken);
+            _match("**");
+            treeNode.sons.push(currentToken);
+            _match("NAME");
+        } else {
+            treeNode.sons.push(_fpdef());
+            if (currentToken.type == "=") {
+                treeNode.sons.push(currentToken);
+                _match('=');
+                treeNode.sons.push(_test());
+            }
+            while (currentToken.type == ',') {
+                _match(',');
+                if (currentToken.type == '*') {
                     treeNode.sons.push(currentToken);
-                    _match();
-                    treeNode.sons.push(_test());
+                    _match('*');
+                    var name = currentToken;
+                    _match("NAME");
+                    treeNode.sons.push(name);
+                } else if (currentToken.type == '**') {
+                    treeNode.sons.push(currentToken);
+                    _match('**');
+                    var name = currentToken;
+                    _match("NAME");
+                    treeNode.sons.push(name);
+                } else {
+                    treeNode.sons.push(_fpdef());
+                    if (currentToken.type == "=") {
+                        treeNode.sons.push(currentToken);
+                        _match("=");
+                        treeNode.sons.push(_test());
+                    }
                 }
             }
+        }
+        
+        return treeNode;
+    }
+
+    function _fpdef() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "FPDEF";
+        if (currentToken.type == '(') {
+            _match('(');
+            treeNode.sons.push(_fplist());
+            _match(')');
+        } else {
+            var name = currentToken;
+            _match("NAME");
+            treeNode.sons.push(name);
+        }
+        return treeNode;
+    }
+
+    function _fplist() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "FPLIST";
+        treeNode.sons.push(_fpdef());
+        while (currentToken.type == ',') {
+            _match(',');
+            treeNode.sons.push(_fpdef());
         }
         return treeNode;
     }
@@ -156,10 +249,56 @@ function Parser(file) {
         } else if (currentToken.type == "FOR") {
             treeNode.sons.push(_comp_for());
         }
+        return treeNode;
     }
 
     function _arglist() {
-        // unfinished
+        var treeNode = new treeNodeClass();
+        treeNode.type = "ARGLIST";
+        if (currentToken.type == "*") {
+            treeNode.sons.push(currentToken);
+            _match('*');
+            treeNode.sons.push(_test());
+            while (currentToken.type == ',') {
+                _match(',');
+                if (currentToken.type == "**") {
+                    treeNode.sons.push(currentToken);
+                    _match("**");
+                    treeNode.sons.push(_test());
+                } else {
+                    treeNode.sons.push(_argument());
+                }
+            }
+        } else if (currentToken.type == "**") {
+            treeNode.sons.push("**");
+            treeNode.sons.push(_test());
+        } else {
+            treeNode.sons.push(_argument());
+            while (currentToken.type == ',') {
+                _match(',');
+                if (currentToken.type == "*") {
+                    treeNode.sons.push(currentToken);
+                    _match('*');
+                    treeNode.sons.push(_test());
+                    while (currentToken.type == ',') {
+                        _match(',');
+                        if (currentToken.type == "**") {
+                            treeNode.sons.push(currentToken);
+                            _match("**");
+                            treeNode.sons.push(_test());
+                        } else {
+                            treeNode.sons.push(_argument());
+                        }
+                    }
+                } else if (currentToken.type == "**") {
+                    treeNode.sons.push("**");
+                    treeNode.sons.push(_test());
+                } else {
+                    treeNode.sons.push(_argument());
+                }
+            }
+        }
+        return treeNode;
     }
 
     function _classdef() {
@@ -178,7 +317,7 @@ function Parser(file) {
         }
         _match(':');
         treeNode.sons.push(_suite());
-        return treeNode();
+        return treeNode;
     }
 
     function _for_stmt() {
@@ -470,8 +609,13 @@ function Parser(file) {
         treeNode.type = "POWER";
         // console.log("I am in power");
         treeNode.sons.push(_atom());
-        if (currentToken.type == '(' || currentToken.type == '[' || currentToken.type == '.') {
+        while (currentToken.type == '(' || currentToken.type == '[' || currentToken.type == '.') {
             treeNode.sons.push(_trailer());
+        }
+        if (currentToken.type == "**") {
+            treeNode.sons.push(currentToken);
+            _match("**");
+            treeNode.sons.push(_factor());
         }
         return treeNode;
     }
@@ -505,18 +649,24 @@ function Parser(file) {
         // console.log("I am in atom");
         if (currentToken.type == '(') {
             _match('(');
-            var testlist = _testlist_comp();
-            treeNode.sons.push(testlist);
+            if (currentToken.type != ')') {
+                var testlist = _testlist_comp();
+                treeNode.sons.push(testlist);
+            }
             _match(')');
         } else if (currentToken.type == '[') {
             _match('[');
-            var testlist = _listmaker();
-            treeNode.sons.push(testlist);
+            if (currentToken.type != ']') {
+                var testlist = _listmaker();
+                treeNode.sons.push(testlist);
+            }
             _match(']');
         } else if (currentToken.type == '{') {
             _match('{');
-            var testlist = _dictorsetmaker();
-            treeNode.sons.push(testlist);
+            if (currentToken.type != '}') {
+                var testlist = _dictorsetmaker();
+                treeNode.sons.push(testlist);
+            }
             _match('}');
         } else if (currentToken.type == "NAME") {
             // console.log("I am in NAME");
@@ -538,15 +688,51 @@ function Parser(file) {
         return treeNode;
     }
 
+    function _dictorsetmaker() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "DICTORSETMAKER";
+        treeNode.sons.push(_test());
+        if (currentToken.type == ":") {
+            treeNode.sons.push(currentToken);
+            _match(":");
+            treeNode.sons.push(_test());
+            if (currentToken.type == "FOR") {
+                treeNode.sons.push(_comp_for());
+            } else if (currentToken.type == ',') {
+                while (currentToken.type == ',') {
+                    _match(',')
+                    treeNode.sons.push(_test());
+                    if (currentToken.type == ":") {
+                        treeNode.sons.push(currentToken);
+                        _match(":");
+                        treeNode.sons.push(_test());
+                    }
+                }
+            }
+        } else {
+            if (currentToken.type == "FOR") {
+                treeNode.sons.push(_comp_for());
+            } else if (currentToken.type == ',') {
+                while (currentToken.type == ',') {
+                    _match(',');
+                    treeNode.sons.push(_test());
+                }
+            }
+        }
+        return treeNode;
+    }
+
     function _testlist_comp() {
         var treeNode = new treeNodeClass();
         treeNode.type = "TESTLIST_COMP";
         treeNode.sons.push(_test());
         if (currentToken.type == "FOR") {
-            treeNode.sons.push(_comp_for()); // unfinished
+            treeNode.sons.push(_comp_for());
         } else if (currentToken.type == ',') {
-            _match(',');
-            treeNode.sons.push(_test());
+            while (currentToken.type == ',') {
+                _match(',');
+                treeNode.sons.push(_test());
+            }
         }
         return treeNode;
     }
@@ -556,7 +742,7 @@ function Parser(file) {
         treeNode.type = "LISTMAKER";
         treeNode.sons.push(_test());
         if (currentToken.type == "FOR") {
-            treeNode.sons.push(_list_for()); //unfinished
+            treeNode.sons.push(_list_for()); 
         } else if (currentToken.type == ',') {
             while (currentToken.type == ',') {
                 _match(',');
@@ -575,6 +761,17 @@ function Parser(file) {
         treeNode.sons.push(_testlist_safe());
         if (currentToken.type == "FOR" || currentToken.type == "IF") {
             treeNode.sons.push(_list_iter());
+        }
+        return treeNode;
+    }
+
+    function _testlist_safe() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "TESTLIST_SAFE";
+        treeNode.sons.push(_old_test());
+        while (currentToken.type == ',') {
+            _match(",");
+            treeNode.sons.push(_old_test());
         }
         return treeNode;
     }
@@ -604,10 +801,44 @@ function Parser(file) {
     function _old_test() {
         var treeNode = new treeNodeClass();
         treeNode.type = "OLD_TEST";
-        treeNode.sons.push(_or_test()); // lambdef unfinished
+        treeNode.sons.push(_or_test()); 
         return treeNode;
     }
 
+    function _comp_for() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "COMP_FOR";
+        _match("FOR");
+        treeNode.sons.push(_exprlist());
+        _match("IN");
+        treeNode.sons.push(_or_test());
+        if (currentToken.type == "FOR" || currentToken.type == "IF") {
+            treeNode.sons.push(_comp_iter());
+        }
+        return treeNode;
+    }
+
+    function _comp_if() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "COMP_IF";
+        _match("IF");
+        treeNode.sons.push(_old_test());
+        if (currentToken.type == "FOR" || currentToken.type == "IF") {
+            treeNode.sons.push(_comp_iter());
+        }
+        return treeNode;
+    }
+
+    function _comp_iter() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "COMP_ITER";
+        if (currentToken.type == "FOR") {
+            treeNode.sons.push(_comp_for());
+        } else if (currentToken.type == "IF") {
+            treeNode.sons.push(_comp_if());
+        }
+        return treeNode;
+    }
 
 
 

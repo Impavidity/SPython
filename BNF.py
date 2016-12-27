@@ -3,9 +3,7 @@ funcdef: 'def' NAME parameters ':' suite
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 parameters: '(' [varargslist] ')'
 '''
-varargslist: ((fpdef ['=' test] ',')*
-              ('*' NAME [',' '**' NAME] | '**' NAME) |
-              fpdef ['=' test] (',' fpdef ['=' test])* [','])
+varargslist: ((fpdef ['=' test] ',')* ('*' NAME [',' '**' NAME] | '**' NAME) | fpdef ['=' test] (',' fpdef ['=' test])* [','])
 fpdef: NAME | '(' fplist ')'
 fplist: fpdef (',' fpdef)* [',']
 '''
@@ -17,11 +15,10 @@ augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=
 print_stmt: 'print' testlist
 del_stmt: 'del' exprlist
 pass_stmt: 'pass'
-flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt 
+flow_stmt: break_stmt | continue_stmt | return_stmt  
 break_stmt: 'break'
 continue_stmt: 'continue'
 return_stmt: 'return' [testlist]
-raise_stmt: 'raise' [test [',' test [',' test]]]
 global_stmt: 'global' NAME (',' NAME)*
 exec_stmt: 'exec' expr ['in' test [',' test]]
 assert_stmt: 'assert' test [',' test]
@@ -47,7 +44,6 @@ power: atom trailer* ['**' factor] # Not finished
 atom: ('(' [testlist_comp] ')' | # not finished
        '[' [listmaker] ']' | #not finished
        '{' [dictorsetmaker] '}' | # not finished
-       '`' testlist1 '`' |
        NAME | NUMBER | STRING+)  
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME # not finished
 listmaker: test ( list_for | (',' test)* [','] )
@@ -71,9 +67,7 @@ sliceop: ':' [test]
 
 
 
-arglist: (argument ',')* (argument [',']
-                         |'*' test (',' argument)* [',' '**' test] 
-                         |'**' test)
+arglist: (argument ',')* (argument [','] |'*' test (',' argument)* [',' '**' test] |'**' test)
 # The reason that keywords are test nodes instead of NAME is that using NAME
 # results in an ambiguity. ast.c makes sure it's a NAME.
 argument: test [comp_for] | test '=' test
