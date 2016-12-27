@@ -306,6 +306,45 @@ function Engine() {
         }
     }
 
+    function _exec_shift_expr(ast,context) {
+        if(ast.type == "SHIFT_EXPR"){
+            var shift_expr = new SObject();
+            var arr = new Array();
+            for(var key in ast.sons) {
+                if (ast.sons[key] == "ARITH_EXPR")
+                    arr.push(_exec_arith_expr(ast.sons[key], context));
+            }
+            shift_expr = RES_comparison(arr);
+            return shift_expr;
+        }
+    }
+
+    function _exec_arith_expr(ast,context) {
+        if(ast.type == "ARITH_EXPR"){
+            var arith_expr = new  SObject();
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key] == "TERM")
+                    arr.push(_exec_term(ast.sons[key],context));
+            }
+            arith_expr = RES_comparison(arr);
+            return arith_expr;
+        }
+    }
+
+    function _exec_term(ast,context) {
+        if(ast.type == "TERM"){
+            var term = new SObject();
+            var arr = new Array();
+            for(var key in ast.sons){
+                if(ast.sons[key] == "FACTOR")
+                    arr.push(_exec_factor(ast.sons[key],context));
+            }
+            term = RES_comparison(arr);
+            return term;
+        }
+    }
+    
     function _exec_pass_stmt(ast,context) {
         if(ast.type == "PASS_STMT"){
             console.log("pass");
