@@ -350,13 +350,25 @@ function Engine() {
             var factor = new SObject();
             var arr = new Array();
             if(ast.sons.length == 1)
-                arr.push(_exec_power(ast.sons[0],context));
+                arr.push(_exec_atom(ast.sons[0],context));
             else if(ast.sons.length == 2){
                 arr.push(ast.sons[0],context);
                 _exec_factor(ast.sons[1],context);
             }
             factor = RES_comparison(arr);
             return factor;
+        }
+    }
+    
+    function _exec_atom(ast,context) {
+        if(ast.type == "ATOM"){
+            // list tuple 这一块不会
+            var atom = new SObject();
+            if(ast.sons.length == 1) {
+                    atom.type = ast.sons[0].type;
+                    atom.value = ast.sons[0].value;
+            }
+            return atom;
         }
     }
     
