@@ -143,6 +143,7 @@ function Engine() {
     */
     function _exec_expr_stmt(ast, context) {
         var args = new Array();
+        var result;
         if (ast.type == "EXPR_STMT") {
             if (ast.sons.length == 3) {
                 for (var key in ast.sons) {
@@ -157,6 +158,8 @@ function Engine() {
                         args.push(op);
                     }
                 }
+                result = ResFuncSet.RES_expr_stmt(args[0],args[1],args[2]);
+                return result;
             }
             else {
                 console.log("Expr Stmt Length Error");
@@ -387,7 +390,7 @@ function Engine() {
                 if(ast.sons[key].type == "SHIFT_EXPR")
                     args.push(_exec_shift_expr(ast.sons[key],context));
             }
-            result = ResFuncSet.RES_and_test(args);
+            result = ResFuncSet.RES_and_expr(args);
             return result;
         }
     }

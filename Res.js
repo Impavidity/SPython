@@ -95,7 +95,7 @@ exports.RES_comparison = function(array) {
 
     function one_RES_comparison(arg1,op,arg2){
         if (arg1.type==arg2.type && 
-            (arg1.type="Char" || arg1.type="Tuple" || 
+            (arg1.type=="Char" || arg1.type=="Tuple" || 
              arg1.type=="Boolean" || arg1.type=="Number" || 
              arg1.type=="String" || arg1.type=="List")) {
             if (op.value == "<") {              
@@ -350,5 +350,109 @@ exports.RES_factor = function(op,arg) {
     }
     else {
         console.log("RES_factor Error:option error");
+    }
+}
+
+//and_expr: shift_expr ('&' shift_expr)*
+exports.RES_and_expr = function(array) {
+
+    function one_RES_and_expr(arg1,arg2){
+        if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
+            arg1.value=arg1.value & arg2.value;
+            return arg1;
+        }
+        else {
+            console.log("one_RES_and_expr Error:type error");
+        }
+    }
+
+    args_num=array.length;
+    if(args_num>0){
+        temp=new SObject.SObject();
+        temp.type=array[0].type;
+        temp.value=array[0].value;
+        for (i=1;i<args_num-1;i++){
+            one_RES_and_expr(temp,array[i]);
+        }
+        temp.type=="Number";
+        return temp;
+    }   
+    else 
+        console.log("RES_and_expr Error:null array");
+}
+
+// expr_stmt: testlist augassign testlist | testlist '=' testlist
+// augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
+this.RES_expr_stmt = function(arg1,op,arg2) {
+    temp=SObject.SObject();
+    if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
+        if (op.value == "+=") {
+            arg1.value=arg1.value+arg2.value;
+            return arg1;
+        }
+        else if(op.value == "-="){
+            arg1.value=arg1.value-arg2.value;
+            return arg1;
+        } 
+        else if(op.value == "*="){
+            arg1.value=arg1.value*arg2.value;
+            return arg1;
+        } 
+        else if(op.value == "/="){
+            arg1.value=arg1.value / arg2.value;
+            return arg1;
+        } 
+        else if(op.value == "%="){
+            arg1.value=arg1.value % arg2.value;
+            return arg1;
+        } 
+        else if(op.value == "|="){
+            arg1.value=arg1.value | arg2.value;
+            return arg1;
+        }               
+         else if(op.value == "^="){
+            arg1.value=arg1.value ^ arg2.value;
+            return arg1;
+        } 
+        else if(op.value == "<<="){
+            arg1.value=arg1.value << arg2.value;
+            return arg1;
+        } 
+        else if(op.value == ">>="){
+            arg1.value=arg1.value >> arg2.value;
+            return arg1;
+        } 
+        else if(op.value == "**="){
+            arg1.value=Math.pow(arg1.value,arg2.value)//Math!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            return arg1;
+        } 
+        else if(op.value == "//="){
+            arg1.value=parseInt(arg1.value / arg2.value);
+            return arg1;
+        }  
+        else {
+            console.log("RES_expr_stmt Error:no such option ");
+        }
+    }
+    else if (arg1.type==arg2.type && arg1.type=="String") {
+        if (op.value == "+=") {
+            arg1.value=arg1.value+arg2.value;
+            return arg1
+        }
+        else {
+            console.log("RES_expr_stmt Error:String only support += ");
+        }
+    }
+    else if (arg1.type==arg2.type && arg1.type=="List") {
+        if (op.value == "+=") {
+            arg1.value=arg1.value+arg2.value;
+            return arg1
+        }
+        else {
+            console.log("RES_expr_stmt Error:String only support += ");
+        }
+    }
+    else{
+        console.log("RES_expr_stmt Error :args type not same OR type not support the option");
     }
 }
