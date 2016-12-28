@@ -2,6 +2,23 @@
 Res function set : Yin Huang & Peng
 */
 
+Array.prototype.contains_value = function (element) { 
+    for (var i = 0; i < this.length; i++) { 
+        if (this[i] == element) { 
+        return true; 
+        } 
+    } 
+    return false; 
+} 
+Array.prototype.contains_key = function (element) { 
+    for (i in this) { 
+        if (i == element) { 
+        return true; 
+        } 
+    } 
+    return false; 
+} 
+
 exports.RES_or_test = function(array) {
     args_num=array.length;
     if(args_num>0){

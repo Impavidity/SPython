@@ -130,16 +130,24 @@ function Engine() {
         }
     }
 
+    /*
+    Revised by Peng
+    */
     function _exec_expr_stmt(ast, context) {
+        var args = new Array();
         if (ast.type == "EXPR_STMT") {
             if (ast.sons.length == 3) {
                 for (var key in ast.sons) {
-                    if (ast.sons[key].type == "TESTLIST")
-                        _exec_testlist(ast.sons[key], context);
-                    else if (ast.sons[key].type == "AUGASSIGN")
-                        _exec_augassign(ast.sons[key], context);
-                    else if (ast_sons[key].type == "=")
-                        x = 1;
+                    if (ast.sons[key].type == "TESTLIST") {
+                        args.push(_exec_testlist(ast.sons[key], context));
+                    } else if (ast.sons[key].type == "AUGASSIGN") {
+                        args.push(_exec_augassign(ast.sons[key], context));
+                    } else if (ast_sons[key].type == "=") {
+                        var op = new ObjectClass.SObject();
+                        op.type = "Option";
+                        op.value = ast.sons[key].type;
+                        args.push(op);
+                    }
                 }
             }
             else {
@@ -148,18 +156,30 @@ function Engine() {
         }
     }
 
+    /*
+    Revised by Peng
+    */
     function _exec_augassign(ast, context) {
-
+        var result = new ObjectClass.SObject();
+        result.value = ast.type;
+        result.type = "Option";
+        return result;
     }
 
+    /*
+    Revised by Peng : unfinished
+    */
     function _exec_testlist(ast, context) {
+        var args = new Array();
+        var result;
         if (ast.type == "TESTLIST") {
             for (var key in ast.sons) {
                 if (ast.sons[key].type == "TEST")
-                    _exec_test(ast.sons[key], context);
+                    args.push(_exec_test(ast.sons[key], context));
             }
         }
-        return //
+        result = /*Make Struct*/(args);
+        return result;
     }
 
     /*
@@ -259,12 +279,17 @@ function Engine() {
 
 
 
-
+    /*
+    Revised by Peng: unfinished
+    */
     function _exec_print_stmt(ast,context) {
+        var result;
         if(ast.type == "PRINT_STMT"){
             if(ast.sons.length == 1) {
-                if (ast.sons[0].type == "testlist")
-                    console.log("print" + _exec_testlist(ast.sons[0], context));
+                if (ast.sons[0].type == "TESTLIST") {
+                    result = _exec_testlist(ast.sons[0], context);
+                    /*PRINT*/(result);
+                }
             }
             else {
                 console.log("Print_Stmt Length Error");
@@ -444,6 +469,33 @@ function Engine() {
             result = RES_factor(arr);
             return result;
         }
+    }
+
+
+    /*
+    Written by Peng : Unfinished
+    */
+    function _exec_power(ast, context) {
+        var result;
+        var args = new Array();
+        if (ast.type == "POWER") {
+            for (var key in ast.sons) {
+                if (ast.sons[key].type == "ATOM") {
+                    args.push(_exec_atom(ast.sons[key], context));
+                } else if (ast.sons[key].type == "TRAILER") {
+                    args.push(_exec_trailer(ast.sons[key], context));
+                } else if (ast.sons[key].type == "**") {
+                    var op = new ObjectClass.SObject();
+                    op.type = "Option";
+                    op.value = ast.sons[key].type;
+                    args.push(op);
+                } else if (ast.sons[key].type == "FACTOR") {
+                    args.push(_exec_factor(ast.sons[key], context));
+                }
+            }
+        }
+        result = /*FUNCTION*/(args);
+        return result;
     }
     
     function _exec_atom(ast,context) {
