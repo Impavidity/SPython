@@ -75,8 +75,7 @@ argument: test [comp_for] | test '=' test
 
 
 testlist_safe: old_test [(',' old_test)+ [',']]
-old_test: or_test | old_lambdef
-old_lambdef: 'lambda' [varargslist] ':' old_test
+old_test: or_test
 
 
 

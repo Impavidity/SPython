@@ -2,6 +2,7 @@
 
 
 exports.SActiveRecord = function(){   
+    this.name = "";
     this.return_value = null;
     this.outFunction = null;
     this.allEntry = new Array(); //[SObject,SObject...new Sfunction,new SClass]

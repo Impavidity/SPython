@@ -1,7 +1,7 @@
 /*
 Res function set : Yin Huang & Peng
 */
-
+var SObject = require("./Object");
 Array.prototype.contains_value = function (element) { 
     for (var i = 0; i < this.length; i++) { 
         if (this[i] == element) { 
@@ -18,7 +18,7 @@ Array.prototype.contains_key = function (element) {
     } 
     return false; 
 } 
-
+// or_test: and_test ('or' and_test)*
 exports.RES_or_test = function(array) {
     args_num=array.length;
     if(args_num>0){
@@ -28,17 +28,18 @@ exports.RES_or_test = function(array) {
             if((array[i].type=="Boolean" && array[i].value==true) || (array[i].type!="Boolean" && array[i].value != null))
                 break;
         }
+        console.log(i);
         if(i==args_num){
             temp=new SObject.SObject();
             temp.type="Boolean";
             temp.value=false;
-            return temp
+            return temp;
         }
         else{
             temp=new SObject.SObject();
             temp.type=array[i].type;
             temp.value=array[i].value;
-            return temp             
+            return temp;
         }
     }   
     else 
@@ -60,13 +61,13 @@ exports.RES_and_test = function(array) {
             temp=new SObject.SObject();
             temp.type="Boolean";
             temp.value=true;
-            return temp
+            return temp;
         }
         else{
             temp=new SObject.SObject();
             temp.type=array[i].type;
             temp.value=array[i].value;
-            return temp             
+            return temp;             
         }
     }   
     else 
@@ -93,7 +94,10 @@ exports.RES_not_test = function(arg) {
 exports.RES_comparison = function(array) {
 
     function one_RES_comparison(arg1,op,arg2){
-        if (arg1.type==arg2.type && (arg1.type="Char" || arg1.type="Tuple" || arg1.type=="Boolean" || arg1.type=="Number" || arg1.type=="String" || arg1.type=="List") {
+        if (arg1.type==arg2.type && 
+            (arg1.type="Char" || arg1.type="Tuple" || 
+             arg1.type=="Boolean" || arg1.type=="Number" || 
+             arg1.type=="String" || arg1.type=="List")) {
             if (op.value == "<") {              
                 return arg1.value<arg2.value;
             }
@@ -118,14 +122,15 @@ exports.RES_comparison = function(array) {
             else {
                 console.log("one_RES_comparison Error1:no such option");
             }
-        else if (arg1.type=="Char" && arg2.type=="String" && op.value == "in") {            
+        } else if (arg1.type=="Char" && arg2.type=="String" && op.value == "in") {            
             return (arg2.value.indexOf(arg1.value) >= 0 ) ;
-        else if ((arg2.type=="List" || arg2.type=="Tuple") && op.value == "in") {            
+        } else if ((arg2.type=="List" || arg2.type=="Tuple") && op.value == "in") {            
             return arg2.value.contains_value(arg1.value) ;
-        else if ((arg2.type=="Dictionary") && op.value == "in") {            
+        } else if ((arg2.type=="Dictionary") && op.value == "in") {            
             return arg2.value.contains_key(arg1.value) ;
-        else 
+        } else {
             console.log("one_RES_comparison Error2:no such match");
+        }
     }
 
     args_num=(array.length+1)/2;
@@ -144,7 +149,7 @@ exports.RES_comparison = function(array) {
     temp=new SObject.SObject();
     temp.type="Boolean";
     temp.value=res;
-    return temp
+    return temp;
 }
 
 //expr: xor_expr ('|' xor_expr)*
@@ -154,8 +159,9 @@ exports.RES_expr = function(array) {
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
             arg1.value=arg1.value | arg2.value
             return arg1;
-        else 
+        } else {
             console.log("one_RES_expr Error:type error");
+        }
     }
 
     args_num=array.length;
@@ -166,8 +172,8 @@ exports.RES_expr = function(array) {
         for (i=1;i<args_num-1;i++){
             one_RES_expr(temp,array[i]);
         }
-        temp.type=="Number"
-        return temp
+        temp.type=="Number";
+        return temp;
     }   
     else 
         console.log("RES_expr Error:null array");
@@ -178,10 +184,11 @@ exports.RES_xor_expr = function(array) {
 
     function one_RES_xor_expr(arg1,arg2){
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
-            arg1.value=arg1.value ^ arg2.value
+            arg1.value=arg1.value ^ arg2.value;
             return arg1;
-        else 
+        } else {
             console.log("one_RES_xor_expr Error:type error");
+        }
     }
 
     args_num=array.length;
@@ -192,8 +199,8 @@ exports.RES_xor_expr = function(array) {
         for (i=1;i<args_num-1;i++){
             one_RES_xor_expr(temp,array[i]);
         }
-        temp.type=="Number"
-        return temp
+        temp.type=="Number";
+        return temp;
     }   
     else 
         console.log("RES_xor_expr Error:null array");
@@ -206,16 +213,16 @@ exports.RES_shift_expr = function(array) {
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
             if (op.value == "<<") {
                 arg1.value=arg1.value<<arg2.value;
-                return arg1
-            }
-            else if(op.value == ">>"){
+                return arg1;
+            } else if(op.value == ">>"){
                 arg1.value=arg1.value>>arg2.value;
-                return arg1
-            } 
-            else 
+                return arg1;
+            } else { 
                 console.log("one_RES_shift_expr Error:option error");
-        else 
+            }
+        } else {
             console.log("one_RES_shift_expr Error:type error");
+        }
     }
 
     args_num=(array.length+1)/2;
@@ -226,8 +233,8 @@ exports.RES_shift_expr = function(array) {
         for (i=1;i<args_num-1;i++){
             one_RES_shift_expr(temp,array[i*2-1],array[i*2]);
         }
-        temp.type=="Number"
-        return temp
+        temp.type=="Number";
+        return temp;
     }   
     else 
         console.log("RES_shift_expr Error:null array");
@@ -240,23 +247,23 @@ exports.RES_arith_expr = function(array) {
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
             if (op.value == "+") {
                 arg1.value=arg1.value+arg2.value;
-                return arg1
-            }
-            else if(op.value == "-"){
+                return arg1;
+            } else if(op.value == "-"){
                 arg1.value=arg1.value-arg2.value;
-                return arg1
-            } 
-            else 
+                return arg1;
+            } else {
                 console.log("one_RES_arith_expr Error1:option error");
-        else if (arg1.type==arg2.type && (arg1.type=="String" || arg1.type=="List" || arg1.type=="Tuple")) {
+            }
+        } else if (arg1.type==arg2.type && (arg1.type=="String" || arg1.type=="List" || arg1.type=="Tuple")) {
             if (op.value == "+") {
                 arg1.value=arg1.value+arg2.value;
-                return arg1
+                return arg1;
+            } else {
+                console.log("one_RES_arith_expr Error2:option error");
             }
-            else 
-                console.log("one_RES_arith_expr Error2:option error");         
-        else 
+        } else {
             console.log("one_RES_arith_expr Error:type error");
+        }
     }
 
     args_num=(array.length+1)/2;
@@ -268,9 +275,9 @@ exports.RES_arith_expr = function(array) {
             one_RES_arith_expr(temp,array[i*2-1],array[i*2]);
         }
         if (temp.type=="Boolean"){
-            temp.type=="Number"             
+            temp.type=="Number";             
         }
-        return temp
+        return temp;
     }   
     else 
         console.log("RES_arith_expr Error:null array");
@@ -283,24 +290,22 @@ exports.RES_term = function(array) {
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
             if (op.value == "*") {
                 arg1.value=arg1.value*arg2.value;
-                return arg1
-            }
-            else if(op.value == "/"){
+                return arg1;
+            } else if(op.value == "/"){
                 arg1.value=arg1.value / arg2.value;
-                return arg1
-            } 
-            else if(op.value == "%"){
+                return arg1;
+            } else if(op.value == "%"){
                 arg1.value=arg1.value % arg2.value;
-                return arg1
-            } 
-            else if(op.value == "//"){
+                return arg1;
+            }  else if(op.value == "//"){
                 arg1.value=parseInt(arg1.value / arg2.value);
-                return arg1
-            }            
-            else 
+                return arg1;
+            } else {
                 console.log("one_RES_term Error:option error");
-        else 
+            }
+        } else {
             console.log("one_RES_term Error:type error");
+        }
     }
 
     args_num=(array.length+1)/2;
@@ -311,8 +316,8 @@ exports.RES_term = function(array) {
         for (i=1;i<args_num-1;i++){
             one_RES_term(temp,array[i*2-1],array[i*2]);
         }
-        temp.type=="Number"
-        return temp
+        temp.type=="Number";
+        return temp;
     }   
     else 
         console.log("RES_term Error:null array");
@@ -343,7 +348,7 @@ exports.RES_factor = function(op,arg) {
         temp.value= ~temp.value;
         return temp;
     }
-    else 
+    else {
         console.log("RES_factor Error:option error");
     }
 }

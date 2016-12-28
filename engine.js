@@ -22,6 +22,14 @@ function Engine() {
     }
 
     /*
+    Written by Peng Function Implementation
+    */
+    function _exec_funcdef(ast, context) {
+        var FRecord = new ObjectClass.SFunction();
+
+    }
+
+    /*
     Reviewed
     */
     function _exec_stmt(ast, context) {
@@ -244,7 +252,7 @@ function Engine() {
                 result = ResFuncSet.RES_not_test(_exec_not_test(ast.sons[0], context));
                 return result;
             } else if (ast.sons[0].type == "COMPARISON") {
-                return _exec_comparison(ast.son[0], context));
+                return _exec_comparison(ast.son[0], context);
             }
         }
     }
@@ -297,7 +305,7 @@ function Engine() {
         }
     }
 
-     function _exec_del_stmt(ast,context) {
+    function _exec_del_stmt(ast,context) {
         if(ast.type == "DEL_STMT"){
             if(ast.sons.length == 2){
                 if(ast.sons[1].type == "EXPRLIST") {
