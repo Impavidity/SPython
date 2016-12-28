@@ -21,6 +21,11 @@ Array.prototype.contains_key = function (element) {
 // or_test: and_test ('or' and_test)*
 exports.RES_or_test = function(array) {
     args_num=array.length;
+    /*Implemented by Peng*/
+    if (args_num == 1) {
+        return array[0];
+    }
+    /**/
     if(args_num>0){
         for (i=0;i<args_num;i++){
             if(array[i].type=="Identity" || array[i].type=="Option")
@@ -28,7 +33,7 @@ exports.RES_or_test = function(array) {
             if((array[i].type=="Boolean" && array[i].value==true) || (array[i].type!="Boolean" && array[i].value != null))
                 break;
         }
-        console.log(i);
+        // console.log(i);
         if(i==args_num){
             temp=new SObject.SObject();
             temp.type="Boolean";
@@ -48,6 +53,11 @@ exports.RES_or_test = function(array) {
 
 exports.RES_and_test = function(array) {
     args_num=array.length;
+    /*Implemented by Peng*/
+    if (args_num == 1) {
+        return array[0];
+    }
+    /**/
     if(args_num>0){
         for (i=0;i<args_num;i++){
             if(array[i].type=="Identity" || array[i].type=="Option")
@@ -132,6 +142,12 @@ exports.RES_comparison = function(array) {
             console.log("one_RES_comparison Error2:no such match");
         }
     }
+
+    /*Implemented by Peng*/
+    if (array.length == 1) {
+        return array[0];
+    }
+    /**/
 
     args_num=(array.length+1)/2;
     res=true;
@@ -324,8 +340,19 @@ exports.RES_term = function(array) {
 }
 
 // factor: ('+'|'-'|'~') factor | power
-exports.RES_factor = function(op,arg) {
-    temp=new SObject.SObject();
+exports.RES_factor = function(args) {
+    var op;
+    var arg;
+    if (args.length == 2) {
+        op = args[0];
+        arg = args[1];
+    } else if (args.length == 1){
+        arg = args[0];
+    }
+    if (arg.type == "Identity") {
+        return arg;
+    }
+    var temp = new SObject.SObject();
     temp.type="Number";
     if(arg.type=="Number")
         temp.value=arg.value;
@@ -335,22 +362,25 @@ exports.RES_factor = function(op,arg) {
         temp.value=0;
     else
          console.log("RES_factor Error:type error");
-    
-    if (op.value == "+") {
-        temp.value=temp.value;
-        return temp;
+
+    if (op != undefined) {
+        if (op.value == "+") {
+            temp.value=temp.value;
+            return temp;
+        }
+        else if (op.value == "-") {
+            temp.value=-temp.value;
+            return temp;
+        }
+        else if (op.value == "~") {
+            temp.value= ~temp.value;
+            return temp;
+        }
+        else {
+            console.log("RES_factor Error:option error");
+        }
     }
-    else if (op.value == "-") {
-        temp.value=-temp.value;
-        return temp;
-    }
-    else if (op.value == "~") {
-        temp.value= ~temp.value;
-        return temp;
-    }
-    else {
-        console.log("RES_factor Error:option error");
-    }
+    return temp;
 }
 
 //and_expr: shift_expr ('&' shift_expr)*
@@ -384,7 +414,7 @@ exports.RES_and_expr = function(array) {
 // expr_stmt: testlist augassign testlist | testlist '=' testlist
 // augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
 this.RES_expr_stmt = function(arg1,op,arg2) {
-    temp=SObject.SObject();
+    var temp=SObject.SObject();
     if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
         if (op.value == "+=") {
             arg1.value=arg1.value+arg2.value;
