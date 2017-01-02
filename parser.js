@@ -13,6 +13,8 @@ function Parser(file) {
     var comp_op = ['<','>','==','>=','<=','<>','!=','in','is'];
     var augassign = ['+=','-=','*=','/=','%=','&=','|=','^=','<<=','>>=','**=','//='];
     var indent_level = 0;
+    var indent_stack = new Array();
+    var base_indent = 0;
 
     function _match(type) {
         // console.log(currentToken);
@@ -28,7 +30,7 @@ function Parser(file) {
         }
     }
 
-    this._file_input = function() {
+    this._file_input = function(indent) {
         var treeNode = new treeNodeClass();
         treeNode.type = "FILE_INPUT";
         while (currentToken.type != "EOF") {
@@ -36,14 +38,14 @@ function Parser(file) {
                 _match("NEWLINE");
                 continue;
             }
-            var stmt = _stmt();
+            var stmt = _stmt(indent);
             //console.log(stmt);
             treeNode.sons.push(stmt);
         }
         return treeNode;
     }
 
-    function _stmt() {
+    function _stmt(indent) {
         var treeNode = new treeNodeClass();
         treeNode.type = "STMT";
         if (currentToken.type == "PRINT" || currentToken.type == "DEL" || 
@@ -52,7 +54,7 @@ function Parser(file) {
             treeNode.sons.push(_simple_stmt());
         } else if (currentToken.type == "IF" || currentToken.type == "WHILE" || currentToken.type == "FOR" ||
             currentToken.type == "DEF" || currentToken.type == "CLASS") {
-            treeNode.sons.push(_compound_stmt());
+            treeNode.sons.push(_compound_stmt(indent));
         }
         return treeNode;
     }
@@ -117,24 +119,24 @@ function Parser(file) {
         return treeNode;
     }
 
-    function _compound_stmt() {
+    function _compound_stmt(indent) {
         var treeNode = new treeNodeClass();
         treeNode.type = "COMPOUND_STMT";
         if (currentToken.type == "IF") {
-            treeNode.sons.push(_if_stmt());
+            treeNode.sons.push(_if_stmt(indent));
         } else if (currentToken.type == "WHILE") {
-            treeNode.sons.push(_while_stmt());
+            treeNode.sons.push(_while_stmt(indent));
         } else if (currentToken.type == "FOR") {
-            treeNode.sons.push(_for_stmt());
+            treeNode.sons.push(_for_stmt(indent));
         } else if (currentToken.type == "DEF") {
-            treeNode.sons.push(_funcdef());
+            treeNode.sons.push(_funcdef(indent));
         } else if (currentToken.type == "CLASS") {
-            treeNode.sons.push(_classdef());
+            treeNode.sons.push(_classdef(indent));
         }
         return treeNode;
     }
 
-    function _funcdef() {
+    function _funcdef(indent) {
         var treeNode = new treeNodeClass();
         treeNode.type = "FUNCDEF";
         _match("DEF");
@@ -143,7 +145,7 @@ function Parser(file) {
         treeNode.sons.push(name);
         treeNode.sons.push(_parameters());
         _match(":");
-        treeNode.sons.push(_suite());
+        treeNode.sons.push(_suite(indent+1));
         return treeNode;
     }
 
@@ -301,7 +303,7 @@ function Parser(file) {
         return treeNode;
     }
 
-    function _classdef() {
+    function _classdef(indent) {
         var treeNode = new treeNodeClass();
         treeNode.type = "CLASSDEF";
         _match("CLASS");
@@ -316,11 +318,11 @@ function Parser(file) {
             _match(')');
         }
         _match(':');
-        treeNode.sons.push(_suite());
+        treeNode.sons.push(_suite(indent+1));
         return treeNode;
     }
 
-    function _for_stmt() {
+    function _for_stmt(indent) {
         var treeNode = new treeNodeClass();
         treeNode.type = "FOR_STMT";
         _match("FOR");
@@ -328,60 +330,69 @@ function Parser(file) {
         _match("IN");
         treeNode.sons.push(_testlist());
         _match(":");
-        treeNode.sons.push(_suite());
+        treeNode.sons.push(_suite(indent+1));
         return treeNode;
     }
 
-    function _while_stmt() {
+    function _while_stmt(indent) {
         var treeNode = new treeNodeClass();
         treeNode.type = "WHILE_STMT";
         _match("WHILE");
         treeNode.sons.push(_test());
         _match(":");
-        treeNode.sons.push(_suite());
+        treeNode.sons.push(_suite(indent+1));
         return treeNode;
     }
 
-    function _if_stmt() {
+    function _if_stmt(indent) {
         var treeNode = new treeNodeClass();
         treeNode.type = "IF_STMT";
         _match("IF");
         treeNode.sons.push(_test());
         _match(":");
-        treeNode.sons.push(_suite());
+        treeNode.sons.push(_suite(indnet+1));
         while (currentToken.type == "ELIF") {
             _match("ELIF");
             treeNode.sons.push(_test());
             _match(":");
-            treeNode.sons.push(_suite());
+            treeNode.sons.push(_suite(indent+1));
         }
         if (currentToken.type == "ELSE") {
             _match("ELSE");
             _match(":");
-            treeNode.sons.push(_suite());
+            treeNode.sons.push(_suite(indent+1));
         }
         return treeNode;
     }
 
-    function _suite() {
+
+    var counti=0;
+    function _suite(indent) {
+        console.log("current indent : "+indent);
+        console.log("current counti : "+counti);
         var treeNode = new treeNodeClass();
         treeNode.type = "SUITE";
         if (currentToken.type == "NEWLINE") {
             _match("NEWLINE");
-            indent_level += 1;
+            counti = 0;
             do {
-                var i = 0;
                 while (currentToken.type == "INDENT") {
                     _match("INDENT");
-                    i += 1;
+                    counti += 1;
                 }
-                if (i == indent_level) {
-                    treeNode.sons.push(_stmt());
-                } else if (i < indent_level) {
-                    indent_level -= 1
+                if (currentToken.type == "NEWLINE") {
+                    _match("NEWLINE");
+                    counti=0;
+                    continue;
+                }
+                console.log("i:"+counti+" base_indent:"+indent);
+                if (counti == indent) {
+                    treeNode.sons.push(_stmt(indent));
+                } else {
                     return treeNode;
                 }
                 _match("NEWLINE");
+
             } while (true);
 
 
@@ -410,13 +421,21 @@ function Parser(file) {
         var treeNode = new treeNodeClass();
         treeNode.type = "EXPR_STMT";
         treeNode.sons.push(_testlist());
-        treeNode.sons.push(currentToken);
+        
         if (currentToken.type == "=") {
+            treeNode.sons.push(currentToken);
             _match("=");
             treeNode.sons.push(_testlist());
-        } else if (augassign.indexOf(currentToken.type)!=-1) {
-            _match(currentToken.type);
-            treeNode.sons.push(_testlist());
+        } else {
+            if (augassign.indexOf(currentToken.type)!=-1) {
+                currentToken.type = "AUGASSIGN";
+                treeNode.sons.push(currentToken);
+                _match(currentToken.type);
+                treeNode.sons.push(_testlist());
+            } else {
+                console.log("Wrong Augassign");
+                process.exit(0);
+            }
         }
         return treeNode;
     }

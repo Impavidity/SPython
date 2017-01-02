@@ -8,6 +8,7 @@ function Lexer(inputFile) {
     var pointer = 0;
     
     var oplist = ['+','-','*','/','%','=','&','|','^','<','>'];
+    var augassignList = ["+=","-=","*=","/=","%=","&=","|=","^=","<<=",">>=","**=","//="];
     var treeNodeClass = require('./treeNode');
     var lineNum = 1;
     var lastChar=' ';
@@ -187,7 +188,6 @@ function Lexer(inputFile) {
             while (isop(lastChar=getLastChar())) {
                 opStr += lastChar;   
             }
-
             treeNode.type = opStr;
             treeNode.value = opStr;
             treeNode.lineNumber = lineNum;

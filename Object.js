@@ -13,6 +13,24 @@ exports.SActiveRecord = function(){
         }
         return ret.substring(0,ret.length-1)  + "}";
     }
+    this.printEntry=function(){
+        ret = "| Type \t\t|Name \t\t|Value \t\t|\n"
+        ret += "-------------------------------------------------\n";
+        for (var item in this.allEntry) {
+            if ((item!="contains_key") && (item!="contains_value"))
+                ret += "| " + this.allEntry[item].type + "\t|" + this.allEntry[item].name + "\t\t|" + this.allEntry[item].value + "\t|\n"; 
+        }
+        ret += "-------------------------------------------------";
+        return ret;
+    }
+    this.getEntryLength=function() {
+        var len = 0;
+        for (var item in this.allEntry) {
+            if ((item!="contains_key") && (item!="contains_value"))
+                len+=1;
+        }
+        return len;
+    }
 }
 
 exports.SObject = function(){ 
@@ -70,6 +88,7 @@ exports.SFunction = function(){
     this.ast = null;
     this.argument_list = [];
     this.outFunction = null;
+    this.return_value = null;
     this.toString=function(){
         ret = "function " + this.name;
         ret += "("

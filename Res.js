@@ -11,7 +11,7 @@ Array.prototype.contains_value = function (element) {
     return false; 
 } 
 Array.prototype.contains_key = function (element) { 
-    for (i in this) { 
+    for (var i in this) { 
         if (i == element) { 
         return true; 
         } 
@@ -170,6 +170,8 @@ exports.RES_comparison = function(array) {
 
 //expr: xor_expr ('|' xor_expr)*
 exports.RES_expr = function(array) {
+    if (array.length==1)
+        return array[0];
 
     function one_RES_expr(arg1,arg2){
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
@@ -185,7 +187,7 @@ exports.RES_expr = function(array) {
         temp=new SObject.SObject();
         temp.type=array[0].type;
         temp.value=array[0].value;
-        for (i=1;i<args_num-1;i++){
+        for (i=1;i<args_num;i++){
             one_RES_expr(temp,array[i]);
         }
         temp.type=="Number";
@@ -197,6 +199,8 @@ exports.RES_expr = function(array) {
 
 // xor_expr: and_expr ('^' and_expr)*
 exports.RES_xor_expr = function(array) {
+    if (array.length==1)
+        return array[0];
 
     function one_RES_xor_expr(arg1,arg2){
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
@@ -212,7 +216,7 @@ exports.RES_xor_expr = function(array) {
         temp=new SObject.SObject();
         temp.type=array[0].type;
         temp.value=array[0].value;
-        for (i=1;i<args_num-1;i++){
+        for (i=1;i<args_num;i++){
             one_RES_xor_expr(temp,array[i]);
         }
         temp.type=="Number";
@@ -224,6 +228,8 @@ exports.RES_xor_expr = function(array) {
 
 //shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 exports.RES_shift_expr = function(array) {
+    if (array.length==1)
+        return array[0];
 
     function one_RES_shift_expr(arg1,op,arg2){
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
@@ -246,7 +252,7 @@ exports.RES_shift_expr = function(array) {
         temp=new SObject.SObject();
         temp.type=array[0].type;
         temp.value=array[0].value;
-        for (i=1;i<args_num-1;i++){
+        for (i=1;i<args_num;i++){
             one_RES_shift_expr(temp,array[i*2-1],array[i*2]);
         }
         temp.type=="Number";
@@ -258,6 +264,10 @@ exports.RES_shift_expr = function(array) {
 
 // arith_expr: term (('+'|'-') term)*
 exports.RES_arith_expr = function(array) {
+    console.log("In Arith");
+    console.log(array.length);
+    if (array.length==1)
+        return array[0];
 
     function one_RES_arith_expr(arg1,op,arg2){
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
@@ -287,8 +297,10 @@ exports.RES_arith_expr = function(array) {
         temp=new SObject.SObject();
         temp.type=array[0].type;
         temp.value=array[0].value;
-        for (i=1;i<args_num-1;i++){
+        for (i=1;i<args_num;i++){
             one_RES_arith_expr(temp,array[i*2-1],array[i*2]);
+            console.log("Calculation");
+            console.log(temp);
         }
         if (temp.type=="Boolean"){
             temp.type=="Number";             
@@ -301,6 +313,8 @@ exports.RES_arith_expr = function(array) {
 
 // term: factor (('*'|'/'|'%'|'//') factor)*
 exports.RES_term = function(array) {
+    if (array.length == 1)
+        return array[0];
 
     function one_RES_term(arg1,op,arg2){
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
@@ -329,7 +343,7 @@ exports.RES_term = function(array) {
         temp=new SObject.SObject();
         temp.type=array[0].type;
         temp.value=array[0].value;
-        for (i=1;i<args_num-1;i++){
+        for (i=1;i<args_num;i++){
             one_RES_term(temp,array[i*2-1],array[i*2]);
         }
         temp.type=="Number";
@@ -354,17 +368,25 @@ exports.RES_factor = function(args) {
     }
     var temp = new SObject.SObject();
     temp.type="Number";
+    temp.name=arg.name;
     if(arg.type=="Number")
         temp.value=arg.value;
     else if(arg.type=="Boolean" && arg.value==true)
         temp.value=1;
     else if (arg.type=="Boolean" && arg.value==false)
         temp.value=0;
-    else
-         console.log("RES_factor Error:type error");
+    else if (arg.type=="String") {
+        temp.value=arg.value;
+        temp.type="String";
+    } else
+        console.log("RES_factor Error:type error");
 
     if (op != undefined) {
-        if (op.value == "+") {
+        if (temp.type=="String") {
+            console.log("The type of the value is String and Can not do the operation");
+            return temp;
+        }
+        else if (op.value == "+") {
             temp.value=temp.value;
             return temp;
         }
@@ -385,6 +407,8 @@ exports.RES_factor = function(args) {
 
 //and_expr: shift_expr ('&' shift_expr)*
 exports.RES_and_expr = function(array) {
+    if (array.length==1)
+        return array[0];
 
     function one_RES_and_expr(arg1,arg2){
         if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
@@ -401,7 +425,7 @@ exports.RES_and_expr = function(array) {
         temp=new SObject.SObject();
         temp.type=array[0].type;
         temp.value=array[0].value;
-        for (i=1;i<args_num-1;i++){
+        for (i=1;i<args_num;i++){
             one_RES_and_expr(temp,array[i]);
         }
         temp.type=="Number";
@@ -413,76 +437,105 @@ exports.RES_and_expr = function(array) {
 
 // expr_stmt: testlist augassign testlist | testlist '=' testlist
 // augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
-this.RES_expr_stmt = function(arg1,op,arg2) {
+this.RES_expr_stmt = function(arg1,op,arg2,context) {
     var temp=SObject.SObject();
-    if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
-        if (op.value == "+=") {
-            arg1.value=arg1.value+arg2.value;
-            return arg1;
+    if (op.value == "=") {
+        //If it is assignment : Implement by Peng
+        if (arg1.length != arg2.length) {
+            console.log("The number of values is not the same");
         }
-        else if(op.value == "-="){
-            arg1.value=arg1.value-arg2.value;
-            return arg1;
-        } 
-        else if(op.value == "*="){
-            arg1.value=arg1.value*arg2.value;
-            return arg1;
-        } 
-        else if(op.value == "/="){
-            arg1.value=arg1.value / arg2.value;
-            return arg1;
-        } 
-        else if(op.value == "%="){
-            arg1.value=arg1.value % arg2.value;
-            return arg1;
-        } 
-        else if(op.value == "|="){
-            arg1.value=arg1.value | arg2.value;
-            return arg1;
-        }               
-         else if(op.value == "^="){
-            arg1.value=arg1.value ^ arg2.value;
-            return arg1;
-        } 
-        else if(op.value == "<<="){
-            arg1.value=arg1.value << arg2.value;
-            return arg1;
-        } 
-        else if(op.value == ">>="){
-            arg1.value=arg1.value >> arg2.value;
-            return arg1;
-        } 
-        else if(op.value == "**="){
-            arg1.value=Math.pow(arg1.value,arg2.value)//Math!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            return arg1;
-        } 
-        else if(op.value == "//="){
-            arg1.value=parseInt(arg1.value / arg2.value);
-            return arg1;
-        }  
-        else {
-            console.log("RES_expr_stmt Error:no such option ");
+        for (var i=0; i<arg1.length; i++) {
+            if (context.allEntry.contains_key(arg1[i].name)) {
+                arg1[i].value = arg2[i].value;
+                arg1[i].type = arg2[i].type;
+                context.allEntry[arg1[i].name] = arg1[i];
+            } else {
+                arg1[i].value = arg2[i].value;
+                arg1[i].type = arg2[i].type;
+                context.allEntry[arg1[i].name] = arg1[i];
+            }
         }
-    }
-    else if (arg1.type==arg2.type && arg1.type=="String") {
-        if (op.value == "+=") {
-            arg1.value=arg1.value+arg2.value;
-            return arg1
+        return arg1;
+
+    } else {
+        // Reimplement by Peng
+        if (arg1.length != arg2.length) {
+            console.log("The number of values is not the same");
         }
-        else {
-            console.log("RES_expr_stmt Error:String only support += ");
+        for (var i=0; i<arg1.length; i++) {
+            var temp_arg1 = arg1[i];
+            var temp_arg2 = arg2[i];
+            if ((temp_arg1.type=="Number" || temp_arg1.type=="Boolean") && (temp_arg2.type=="Number" || temp_arg2.type=="Boolean")) {
+                temp_arg1.type="Number";
+                if (op.value == "+=") {
+                    temp_arg1.value=temp_arg1.value+temp_arg2.value;   
+                }
+                else if(op.value == "-="){
+                    temp_arg1.value=temp_arg1.value-temp_arg2.value;
+                } 
+                else if(op.value == "*="){
+                    temp_arg1.value=temp_arg1.value*temp_arg2.value;
+                } 
+                else if(op.value == "/="){
+                    temp_arg1.value=temp_arg1.value / temp_arg2.value;
+                } 
+                else if(op.value == "%="){
+                    temp_arg1.value=temp_arg1.value % temp_arg2.value;
+                } 
+                else if(op.value == "|="){
+                    temp_arg1.value=temp_arg1.value | temp_arg2.value;
+                }               
+                 else if(op.value == "^="){
+                    temp_arg1.value=temp_arg1.value ^ temp_arg2.value;
+                } 
+                else if(op.value == "<<="){
+                    temp_arg1.value=temp_arg1.value << temp_arg2.value;
+                } 
+                else if(op.value == ">>="){
+                    temp_arg1.value=temp_arg1.value >> temp_arg2.value;
+                } 
+                else if(op.value == "**="){
+                    temp_arg1.value=Math.pow(temp_arg1.value,temp_arg2.value)//Math!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                } 
+                else if(op.value == "//="){
+                    temp_arg1.value=parseInt(temp_arg1.value / temp_arg2.value);
+                }  
+                else {
+                    console.log("RES_expr_stmt Error:no such option ");
+                    process.exit(0);
+                }
+
+            }
+            else if (temp_arg1.type==temp_arg2.type && temp_arg1.type=="String") {
+                if (op.value == "+=") {
+                    temp_arg1.value=temp_arg1.value+temp_arg2.value;
+                }
+                else {
+                    console.log("RES_expr_stmt Error:String only support += ");
+                    process.exit(0);
+                }
+            }
+            else if (temp_arg1.type==temp_arg2.type && temp_arg1.type=="List") {
+                if (op.value == "+=") {
+                    temp_arg1.value=temp_arg1.value+temp_arg2.value;
+                }
+                else {
+                    console.log("RES_expr_stmt Error:String only support += ");
+                    process.exit(0);
+                }
+            }
+            else{
+                if (! context.allEntry.contains_key(arg1[i].name)) {
+                    console.log("Value Error : " + arg1[i].name + " is not defined");
+                } else {
+                    console.log("RES_expr_stmt Error :args type not same OR type not support the option");
+                }
+                process.exit(0);
+            }
+            if (context.allEntry.contains_key(arg1[i].name)) {
+                context.allEntry[arg1[i].name] = arg1[i];
+            }
         }
-    }
-    else if (arg1.type==arg2.type && arg1.type=="List") {
-        if (op.value == "+=") {
-            arg1.value=arg1.value+arg2.value;
-            return arg1
-        }
-        else {
-            console.log("RES_expr_stmt Error:String only support += ");
-        }
-    }
-    else{
-        console.log("RES_expr_stmt Error :args type not same OR type not support the option");
+        return arg1;
     }
 }
