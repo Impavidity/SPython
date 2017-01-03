@@ -660,6 +660,58 @@ function Parser(file) {
         return treeNode;
     }
 
+    function _subscriptlist() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "SUBSCRIPTLIST";
+        treeNode.sons.push(_subscript());
+        while (currentToken.type == ",") {
+            _match(",");
+            treeNode.sons.push(_subscript());
+        }
+        return treeNode;
+    }
+
+    function _subscript() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "SUBSCRIPT";
+        if (currentToken.type != ":") {
+            treeNode.sons.push(_test());
+        }
+        if (currentToken.type == ":") {
+            treeNode.sons.push(currentToken);
+            _match(":");
+            if (currentToken.type == "]") {
+                return treeNode;
+            }
+            if (currentToken.type == ":") {
+                treeNode.sons.push(_sliceop());
+            } else {
+                treeNode.sons.push(_test());
+                if (currentToken.type == ":") {
+                    treeNode.sons.push(_sliceop());
+                }
+            }
+        } else {
+            if (treeNode.length == 1) {
+                return treeNode;
+            }
+        }
+        return treeNode;
+    }
+
+    function _sliceop() {
+        var treeNode = new treeNodeClass();
+        treeNode.type = "SLICEOP";
+        _match(":");
+        if (currentToken.type == "]") {
+            return treeNode;
+        } else {
+            treeNode.sons.push(_test());
+            return treeNode;
+        }
+
+    }
+
     function _atom() {
         var treeNode = new treeNodeClass();
         treeNode.type = "ATOM";

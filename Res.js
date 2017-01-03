@@ -38,15 +38,13 @@ exports.RES_or_test = function(array) {
         }
         // console.log(i);
         if(i==args_num){
-            temp=new SObject.SObject();
-            temp.type="Boolean";
-            temp.value=false;
+            temp=array[i-1].copy();
+            temp.name="";
             return temp;
         }
         else{
-            temp=new SObject.SObject();
-            temp.type=array[i].type;
-            temp.value=array[i].value;
+            temp=array[i].copy();
+            temp.name="";
             return temp;
         }
     }   
@@ -71,15 +69,13 @@ exports.RES_and_test = function(array) {
                 break;
         }
         if(i==args_num){
-            temp=new SObject.SObject();
-            temp.type="Boolean";
-            temp.value=true;
-            return temp;
+            temp=array[i-1].copy();
+            temp.name="";
+            return temp; 
         }
         else{
-            temp=new SObject.SObject();
-            temp.type=array[i].type;
-            temp.value=array[i].value;
+            temp=array[i].copy();
+            temp.name="";
             return temp;             
         }
     }   
@@ -187,9 +183,8 @@ exports.RES_expr = function(array) {
 
     args_num=array.length;
     if(args_num>0){
-        temp=new SObject.SObject();
-        temp.type=array[0].type;
-        temp.value=array[0].value;
+        temp=array[0].copy();
+        temp.name="";
         for (i=1;i<args_num;i++){
             one_RES_expr(temp,array[i]);
         }
@@ -216,9 +211,8 @@ exports.RES_xor_expr = function(array) {
 
     args_num=array.length;
     if(args_num>0){
-        temp=new SObject.SObject();
-        temp.type=array[0].type;
-        temp.value=array[0].value;
+        temp=array[0].copy();
+        temp.name="";
         for (i=1;i<args_num;i++){
             one_RES_xor_expr(temp,array[i]);
         }
@@ -252,9 +246,8 @@ exports.RES_shift_expr = function(array) {
 
     args_num=(array.length+1)/2;
     if(args_num>0){
-        temp=new SObject.SObject();
-        temp.type=array[0].type;
-        temp.value=array[0].value;
+        temp=array[0].copy();
+        temp.name="";
         for (i=1;i<args_num;i++){
             one_RES_shift_expr(temp,array[i*2-1],array[i*2]);
         }
@@ -295,9 +288,8 @@ exports.RES_arith_expr = function(array) {
 
     args_num=(array.length+1)/2;
     if(args_num>0){
-        temp=new SObject.SObject();
-        temp.type=array[0].type;
-        temp.value=array[0].value;
+        temp=array[0].copy();
+        temp.name="";
         for (i=1;i<args_num;i++){
             one_RES_arith_expr(temp,array[i*2-1],array[i*2]);
             console.log("Calculation");
@@ -341,9 +333,8 @@ exports.RES_term = function(array) {
 
     args_num=(array.length+1)/2;
     if(args_num>0){
-        temp=new SObject.SObject();
-        temp.type=array[0].type;
-        temp.value=array[0].value;
+        temp=array[0].copy();
+        temp.name="";
         for (i=1;i<args_num;i++){
             one_RES_term(temp,array[i*2-1],array[i*2]);
         }
@@ -426,9 +417,8 @@ exports.RES_and_expr = function(array) {
 
     args_num=array.length;
     if(args_num>0){
-        temp=new SObject.SObject();
-        temp.type=array[0].type;
-        temp.value=array[0].value;
+        temp=array[0].copy();
+        temp.name="";
         for (i=1;i<args_num;i++){
             one_RES_and_expr(temp,array[i]);
         }
@@ -446,17 +436,38 @@ this.RES_expr_stmt = function(arg1,op,arg2,context) {
     if (op.value == "=") {
         //If it is assignment : Implement by Peng
         if (arg1.length != arg2.length) {
-            console.log("The number of values is not the same");
+            console.log("RES_expr_stmt Error:The number of values is not the same");
         }
-        for (var i=0; i<arg1.length; i++) {
-            if (context.allEntry[arg1[i].name]!=undefined) {
-                arg1[i].value = arg2[i].value;
-                arg1[i].type = arg2[i].type;
-                context.allEntry[arg1[i].name] = arg1[i];
-            } else {
-                arg1[i].value = arg2[i].value;
-                arg1[i].type = arg2[i].type;
-                context.allEntry[arg1[i].name] = arg1[i];
+        var temp_args = new Array();
+        for (var i=0; i<arg2.length; i++) {
+            temp_args.push(arg2[i].copy());
+        }
+        for (var i=0; i<arg1.length; i++) { 
+            if(temp_args[i].type=="Identity")
+                    console.log("RES_expr_stmt Error:Identity not defined");
+            else{ 
+                if( arg1[i].ismember==1 || arg1[i].ismember==32){
+                    arg1[i].value = temp_args[i].value;
+                    arg1[i].type = temp_args[i].type;
+                }
+                else if(arg1[i].type=="Identity"){//not context.allEntry.contains_key(arg1[i].name)
+                    arg1[i].value = temp_args[i].value;
+                    arg1[i].type = temp_args[i].type;
+                    arg1[i].ismember = temp_args[i].ismember;
+                    context.allEntry[arg1[i].name] = arg1[i];
+                    console.log("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
+                    console.log(context.allEntry[arg1[i].name]);    
+                    console.log(context.printEntry());            
+                }
+                else if (arg1[i].value!=null) {//context.allEntry.contains_key(arg1[i].name)
+                    arg1[i].value = temp_args[i].value;
+                    arg1[i].type = temp_args[i].type;
+                    arg1[i].ismember = temp_args[i].ismember;
+                    context.allEntry[arg1[i].name] = arg1[i]; 
+                } 
+                else {
+                    console.log("RES_expr_stmt Error:other error");
+                }                                
             }
         }
         return arg1;
@@ -558,9 +569,233 @@ RES_argument = function(item,context, paracount, argument_list) {
 }
 
 exports.RES_power = function(array, context) {
+    
+    function one_RES_power(arg1,arg2){
+        if(arg2.type=="NAME"){
+
+        }
+        else if(arg2.type=="ARGLIST"){
+
+        }
+        else if(arg2.type=="SUBSCRIPTLIST"){
+            if(arg1.type=="List" || arg1.type=="Tuple"){
+                var temp=new SObject.SObject();
+                temp.type=arg1.type;
+                var temp_value= new Array();
+                //arg2.value只认为第一个有效
+                step=arg2.value[0][2];
+                start=arg2.value[0][0];
+                end=arg2.value[0][1];
+                
+                if(step==0)
+                    console.log("one_RES_power Error:step can't be zero");   
+                else if(step>0){
+                    if(start==null){
+                        start=0;                
+                    }
+                    else if(start<0){
+                        start=arg1.value.length+start;
+                    }
+
+                    if(end==null){
+                        end=arg1.value.length-1;                
+                    }
+                    else if(end<0){
+                        end=arg1.value.length+end;
+                        end=end-1;
+                    }
+                    else if(end>0){
+                            end=end-1;
+                    } 
+                    if(arg2.value[0][3]=="loc"){
+                        if( start>=arg1.value.length)
+                            console.log("one_RES_power Error:list index out of index");
+                        else{
+                            //temp=arg1.value[start].copy();
+                            temp=arg1.value[start];
+                            temp.name="";
+                            console.log("999999999999999999999999999999999999999999");
+                            console.log(temp);
+                            console.log("999999999999999999999999999999999999999999");
+                        }
+                    }
+                    else if(arg2.value[0][3]=="slice"){
+                        if( start>=arg1.value.length || start>end )
+                            temp.value=temp_value;
+                        else{
+                            for (var i=start;i<=end;i=i+step){
+                                //temp_value.push(arg1.value[i].copy());
+                                temp_value.push(arg1.value[i]);
+                            }
+                            temp.value=temp_value;
+                        }
+                    }
+                    return temp;
+                }
+                else{//step<0
+                    if(start==null){
+                        start=arg1.value.length-1;                
+                    }
+                    else if(start<0){
+                        start=arg1.value.length+start;
+                    }
+
+                    if(end==null){
+                        end=0;                
+                    }
+                    else if(end<0){
+                        end=arg1.value.length+end;
+                        end=end+1;
+                    }
+                    else if(end>0){
+                            end=end+1;
+                    } 
+                    if(arg2.value[0][3]=="loc"){
+                        if( start>=arg1.value.length)
+                            console.log("one_RES_power Error:list index out of index");
+                        else{
+                            // temp=arg1.value[start].copy();
+                            temp=arg1.value[start];
+                            temp.name="";
+                        }
+                    }
+                    else if(arg2.value[0][3]=="slice"){
+                        if( end>=arg1.value.length || start<end )
+                            temp.value=temp_value;
+                        else{
+                            for (var i=start;i>=end;i=i+step){
+                                // temp_value.push(arg1.value[i].copy());
+                                temp_value.push(arg1.value[i]);
+                            }
+                            temp.value=temp_value;
+                        }
+                    }    
+                    return temp;            
+                }                
+            }
+            else if(arg1.type=="String"){
+                var temp=new SObject.SObject();
+                temp.type=arg1.type;
+                var temp_value= "";
+                //arg2.value只认为第一个有效
+                step=arg2.value[0][2];
+                start=arg2.value[0][0];
+                end=arg2.value[0][1];
+                
+                if(step==0)
+                    console.log("one_RES_power Error:step can't be zero");   
+                else if(step>0){
+                    if(start==null){
+                        start=0;                
+                    }
+                    else if(start<0){
+                        start=arg1.value.length+start;
+                    }
+
+                    if(end==null){
+                        end=arg1.value.length-1;                
+                    }
+                    else if(end<0){
+                        end=arg1.value.length+end;
+                        end=end-1;
+                    }
+                    else if(end>0){
+                            end=end-1;
+                    } 
+                    if(arg2.value[0][3]=="loc"){
+                        if( start>=arg1.value.length)
+                            console.log("one_RES_power Error:list index out of index");
+                        else{
+                            temp.value=arg1.value[start];
+                            temp.type="Char";
+                            temp.ismember=0;
+                        }
+                    }
+                    else if(arg2.value[0][3]=="slice"){
+                        if( start>=arg1.value.length || start>end )
+                            temp.value=temp_value;
+                        else{
+                            for (var i=start;i<=end;i=i+step){
+                                temp_value+=arg1.value[i];
+                            }
+                            temp.value=temp_value;
+                        }
+                    }
+                    return temp;
+                }
+                else{//step<0
+                    if(start==null){
+                        start=arg1.value.length-1;                
+                    }
+                    else if(start<0){
+                        start=arg1.value.length+start;
+                    }
+
+                    if(end==null){
+                        end=0;                
+                    }
+                    else if(end<0){
+                        end=arg1.value.length+end;
+                        end=end+1;
+                    }
+                    else if(end>0){
+                            end=end+1;
+                    } 
+                    if(arg2.value[0][3]=="loc"){
+                        if( start>=arg1.value.length)
+                            console.log("one_RES_power Error:list index out of index");
+                        else{
+                            temp.value=arg1.value[start];
+                            temp.type="Char";
+                            temp.ismember=0;
+                        }
+                    }
+                    else if(arg2.value[0][3]=="slice"){
+                        if( end>=arg1.value.length || start<end )
+                            temp.value=temp_value;
+                        else{
+                            for (var i=start;i>=end;i=i-step){
+                                temp_value+=arg1.value[i];
+                            }
+                            temp.value=temp_value;
+                        }
+                    }    
+                    return temp;              
+                }                
+            }
+            else if(arg1.type=="Dictionary"){
+                var temp=new SObject.SObject();
+                if(arg2.value[0][3]!="loc")
+                    console.log("one_RES_power Error:dic can only loc");  
+                else{
+                    //arg2.value只认为第一个有效
+                    key=arg2.value[0][0];
+                    if (typeof key == "string") key = "S_"+key;
+                    else if (typeof key == "number") key = "N_"+key;
+                    // temp=arg1.value[key].copy();
+                    temp=arg1.value[key];
+                    temp.name="";
+                    return temp;
+                }
+            }
+        }
+        else{//**
+            var temp=new SObject.SObject();
+            temp.type="Number";
+            console.log("888888888888888888888888888888888888");
+            console.log(arg1);
+            console.log(arg2);
+            console.log("888888888888888888888888888888888888");
+            if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
+                temp.value=Math.pow(arg1.value,arg2.value);
+                return temp;
+            }
+        }
+                
+    }
 
     function get_method(op1,op2,context) {
-        if (op1.type == "Class") {
+        if (op1.type == "Class" && (op2.type=="NAME" ||  op2.type=="ARGLIST") ) {
 
         } else if (op1.type == "Func") {
 
@@ -600,46 +835,56 @@ exports.RES_power = function(array, context) {
         return result;
     }
 
-    var temp = array[0];
-    if (temp.type == "Class") {
-        /*
-        temp = context.allEntry[arg1.name];
-        for (var i=1; i<array.length; i++) {
-            if (array[i].type == "NAME") {
-                var name = array[i].name;
-                if (temp.value.allEntry[name]!=undefined) {
-                    temp = temp.value.allEntry[name];    
-                } else {
-                    console.log("Error : The class does not have " + name + " method");
-                    process.exit(0);
-                }
-            } else if (array[i].type == "ARGLIST") {
-                for (var arg in array[i].sons) {
+    args_num=array.length;
+    if(args_num>0){
+        temp=array[0].copy();
+        temp.name="";
+        for (i=1;i<args_num;i++){
+            if(temp.type == "Class"){
+                /*
+                temp = context.allEntry[arg1.name];
+                for (var i=1; i<array.length; i++) {
+                    if (array[i].type == "NAME") {
+                        var name = array[i].name;
+                        if (temp.value.allEntry[name]!=undefined) {
+                            temp = temp.value.allEntry[name];    
+                        } else {
+                            console.log("Error : The class does not have " + name + " method");
+                            process.exit(0);
+                        }
+                    } else if (array[i].type == "ARGLIST") {
+                        for (var arg in array[i].sons) {
 
+                        }
+                    }
+                    
                 }
+                */
+            } else if (temp.type == "Func") {
+                console.log("AAAAAAAAAAAAAAAAAAAAa");
+                console.log(array);
+                // for (var i=1; i<array.length; i++) {
+                //     console.log("iiiiiiiiiiiiiiiiiiiiiiiiii");
+                //     console.log(temp);
+                //     console.log(array[i]);
+                //     console.log("iiiiiiiiiiiiiiiiiiiiiiiiii");
+                temp = get_method(temp,array[i],context);
+                if (temp.length > 1) console.log("Can not return several value");
+                temp = temp[0];
+                console.log("RRRRRRRRRRRR Result of POWER");
+                console.log(temp);
+                console.log("RRRRRRRRRRRRRR");
             }
-            
+            else {
+                temp = one_RES_power(temp,array[i]);
+            }
         }
-        */
-    } else if (temp.type == "Func") {
-        console.log("AAAAAAAAAAAAAAAAAAAAa");
-        console.log(array);
-        for (var i=1; i<array.length; i++) {
-            console.log("iiiiiiiiiiiiiiiiiiiiiiiiii");
-            console.log(temp);
-            console.log(array[i]);
-            console.log("iiiiiiiiiiiiiiiiiiiiiiiiii");
-            temp = get_method(temp,array[i],context);
-            if (temp.length > 1) console.log("Can not return several value");
-            temp = temp[0];
-            console.log("RRRRRRRRRRRR Result of POWER");
-            console.log(temp);
-            console.log("RRRRRRRRRRRRRR")
-        }
-
-
-    }
-    return temp;
-    
+        //temp.type=="Number";
+        console.log(temp);
+        console.log("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+        return temp;
+    }   
+    else 
+        console.log("RES_power Error:null array");
 
 }

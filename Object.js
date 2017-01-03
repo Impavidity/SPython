@@ -6,6 +6,7 @@ exports.SActiveRecord = function(){
     this.return_value = null;
     this.outFunction = null;
     this.allEntry = new Array(); //[SObject,SObject...new Sfunction,new SClass]
+    /*
     this.toString=function(){
         ret = "{";
         for (i in this.allEntry){
@@ -13,6 +14,7 @@ exports.SActiveRecord = function(){
         }
         return ret.substring(0,ret.length-1)  + "}";
     }
+    */
     this.printEntry=function(){
         ret = "Layer: "+this.name+"\n| Type \t\t|Name \t\t|Value \t\t|\n"
         ret += "-------------------------------------------------\n";
@@ -34,9 +36,11 @@ exports.SActiveRecord = function(){
 }
 
 exports.SObject = function(){ 
-    this.type="";//Number,String,List,Dictionary,Tuple,Boolean,Char
+    this.type="";//Number,String,List,Dictionary,Tuple,Boolean,Char,Identity
     this.name="";
     this.value=null;
+    this.ismember=0;//1:list_member;2:Tuple_member;31:dic_member_key,32:dic_member_value;0:else
+    /*
     this.toString=function(){       
         if (this.name.length> 0){
             ret = "{" + this.type+"  "+this.name+": "+this.value+ "}";
@@ -46,6 +50,15 @@ exports.SObject = function(){
             ret = "{ }"
             return ret;
         }
+    }
+    */
+    this.copy=function(){
+        var result =new exports.SObject();
+        result.type=this.type;
+        result.name=this.name;
+        result.value=this.value;
+        result.ismember=this.ismember;
+        return result;
     }
 }
 
@@ -88,15 +101,19 @@ exports.SClass = function(){
 }
 
 exports.SNull = function(){ 
+    /*
     this.toString=function(){
         return "NULL";
     }
+    */
 }
 
 exports.SNone = function(){ 
+    /*
     this.toString=function(){
         return "NONE";
     }
+    */
 }
 
     //只有1个实例
