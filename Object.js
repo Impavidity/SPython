@@ -14,7 +14,7 @@ exports.SActiveRecord = function(){
         return ret.substring(0,ret.length-1)  + "}";
     }
     this.printEntry=function(){
-        ret = "| Type \t\t|Name \t\t|Value \t\t|\n"
+        ret = "Layer: "+this.name+"\n| Type \t\t|Name \t\t|Value \t\t|\n"
         ret += "-------------------------------------------------\n";
         for (var item in this.allEntry) {
             if ((item!="contains_key") && (item!="contains_value"))
@@ -53,15 +53,37 @@ exports.SClass = function(){
     this.allEntry = new Array();//[SObject,Sobject,SFunction...],属性：SObject，方法：SFunction
     this.type="Class" ;//class,number,string,function
     this.name=""
+    this.father = new Array();
+    this.ast = null;
+    /*
     this.toString=function(){
         ret = "Class{"
-        if (len(this.allEntry) > 0){
+        if (this.allEntry.length > 0){
             ret += "\n";
         }
         for (i in this.allEntry){
             ret = ret +  this.allEntry[i].toString() + "," ;
         }
         return ret.substring(0,ret.length-1) + "}";
+    }
+    */
+    this.printEntry=function(){
+        ret = "Class: "+this.name+"\n| Type \t\t|Name \t\t|Value \t\t|\n"
+        ret += "-------------------------------------------------\n";
+        for (var item in this.allEntry) {
+            if ((item!="contains_key") && (item!="contains_value"))
+                ret += "| " + this.allEntry[item].type + "\t|" + this.allEntry[item].name + "\t\t|" + this.allEntry[item].value + "\t|\n"; 
+        }
+        ret += "-------------------------------------------------";
+        return ret;
+    }
+    this.getEntryLength=function() {
+        var len = 0;
+        for (var item in this.allEntry) {
+            if ((item!="contains_key") && (item!="contains_value"))
+                len+=1;
+        }
+        return len;
     }
 }
 
@@ -89,19 +111,21 @@ exports.SFunction = function(){
     this.argument_list = [];
     this.outFunction = null;
     this.return_value = null;
+    /*
     this.toString=function(){
         ret = "function " + this.name;
         ret += "("
         if (this.argument_list.length > 0 ){
-            ret += self.argument_list[0];
+            ret += this.argument_list[0];
             for (i in range(1, this.argument_list.length)){
-                ret += ", " + self.argument_list[i];
+                ret += ", " + this.argument_list[i];
             }
         }
         ret += ")";
         // ret += StFunction.code(this.ast);
         return ret;
     }
+    */
 }
 
         // this.code=function(code){

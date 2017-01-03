@@ -2,6 +2,7 @@
 Res function set : Yin Huang & Peng
 */
 var SObject = require("./Object");
+/*
 Array.prototype.contains_value = function (element) { 
     for (var i = 0; i < this.length; i++) { 
         if (this[i] == element) { 
@@ -18,6 +19,8 @@ Array.prototype.contains_key = function (element) {
     } 
     return false; 
 } 
+*/
+
 // or_test: and_test ('or' and_test)*
 exports.RES_or_test = function(array) {
     args_num=array.length;
@@ -135,9 +138,9 @@ exports.RES_comparison = function(array) {
         } else if (arg1.type=="Char" && arg2.type=="String" && op.value == "in") {            
             return (arg2.value.indexOf(arg1.value) >= 0 ) ;
         } else if ((arg2.type=="List" || arg2.type=="Tuple") && op.value == "in") {            
-            return arg2.value.contains_value(arg1.value) ;
+            return (arg2.value.indexOf(arg1.value)!=-1) ;
         } else if ((arg2.type=="Dictionary") && op.value == "in") {            
-            return arg2.value.contains_key(arg1.value) ;
+            return (arg2.value[arg1.value]!=undefined) ;
         } else {
             console.log("one_RES_comparison Error2:no such match");
         }
@@ -264,8 +267,6 @@ exports.RES_shift_expr = function(array) {
 
 // arith_expr: term (('+'|'-') term)*
 exports.RES_arith_expr = function(array) {
-    console.log("In Arith");
-    console.log(array.length);
     if (array.length==1)
         return array[0];
 
@@ -378,8 +379,11 @@ exports.RES_factor = function(args) {
     else if (arg.type=="String") {
         temp.value=arg.value;
         temp.type="String";
-    } else
-        console.log("RES_factor Error:type error");
+    } else if (arg.type=="Func") {
+        temp.value=arg.value;
+        temp.type="Func";
+    } else 
+        console.log("RES_factor Error:type error : "+arg.type);
 
     if (op != undefined) {
         if (temp.type=="String") {
@@ -445,7 +449,7 @@ this.RES_expr_stmt = function(arg1,op,arg2,context) {
             console.log("The number of values is not the same");
         }
         for (var i=0; i<arg1.length; i++) {
-            if (context.allEntry.contains_key(arg1[i].name)) {
+            if (context.allEntry[arg1[i].name]!=undefined) {
                 arg1[i].value = arg2[i].value;
                 arg1[i].type = arg2[i].type;
                 context.allEntry[arg1[i].name] = arg1[i];
@@ -525,17 +529,117 @@ this.RES_expr_stmt = function(arg1,op,arg2,context) {
                 }
             }
             else{
-                if (! context.allEntry.contains_key(arg1[i].name)) {
+                if (! context.allEntry[arg1[i].name]!=undefined) {
                     console.log("Value Error : " + arg1[i].name + " is not defined");
                 } else {
                     console.log("RES_expr_stmt Error :args type not same OR type not support the option");
                 }
                 process.exit(0);
             }
-            if (context.allEntry.contains_key(arg1[i].name)) {
+            if (context.allEntry[arg1[i].name]!=undefined) {
                 context.allEntry[arg1[i].name] = arg1[i];
             }
         }
         return arg1;
     }
+}
+
+RES_argument = function(item,context, paracount, argument_list) {
+    console.log("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
+    console.log(argument_list);
+    console.log(item.name);
+    if (item.name != "_un_assigned_") {
+        context.allEntry[item.name] = item;
+    } else {
+        item.name = argument_list[paracount-1].name;
+        context.allEntry[argument_list[paracount-1].name] = item;
+
+    }
+}
+
+exports.RES_power = function(array, context) {
+
+    function get_method(op1,op2,context) {
+        if (op1.type == "Class") {
+
+        } else if (op1.type == "Func") {
+
+            if (op2.type == "ARGLIST") {
+                var subcontext = new SObject.SActiveRecord();
+                subcontext.outFunction = context;
+                console.log("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu");
+                console.log(op2);
+                var paracount = 0;
+                for (var i=0;i<op2.value.length;i++) {
+                    console.log("OP2 value : "+op2.value[i].type);
+                    
+                    if (op2.value[i].type == "*") {
+                        paracount += 1;
+                        RES_oneStarArgument(op2.value[i+1],subcontext, paracount, op1.value.argument_list);
+                        i += 1;
+                    }
+                    else if (op2.value[i].type == "**") {
+                        paracount += 1;
+                        RES_twoStarArgument(op2.value[i+1],subcontext, paracount, op1.value.argument_list);
+                        i += 1;
+                    } else {
+                        paracount += 1;
+                        RES_argument(op2.value[i],subcontext, paracount, op1.value.argument_list);
+                    }
+                } 
+                console.log("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+                console.log(op1.value.ast);
+                console.log(subcontext.printEntry());
+                subcontext.name = op1.value.name;
+                global.engine._exec_func_out(op1.value.ast,subcontext);
+                var result = subcontext.return_value;
+                console.log("PPPPPPPPPPPPPPPPPPPPPPPPPPPP");
+                console.log(result);
+            }
+        }
+        return result;
+    }
+
+    var temp = array[0];
+    if (temp.type == "Class") {
+        /*
+        temp = context.allEntry[arg1.name];
+        for (var i=1; i<array.length; i++) {
+            if (array[i].type == "NAME") {
+                var name = array[i].name;
+                if (temp.value.allEntry[name]!=undefined) {
+                    temp = temp.value.allEntry[name];    
+                } else {
+                    console.log("Error : The class does not have " + name + " method");
+                    process.exit(0);
+                }
+            } else if (array[i].type == "ARGLIST") {
+                for (var arg in array[i].sons) {
+
+                }
+            }
+            
+        }
+        */
+    } else if (temp.type == "Func") {
+        console.log("AAAAAAAAAAAAAAAAAAAAa");
+        console.log(array);
+        for (var i=1; i<array.length; i++) {
+            console.log("iiiiiiiiiiiiiiiiiiiiiiiiii");
+            console.log(temp);
+            console.log(array[i]);
+            console.log("iiiiiiiiiiiiiiiiiiiiiiiiii");
+            temp = get_method(temp,array[i],context);
+            if (temp.length > 1) console.log("Can not return several value");
+            temp = temp[0];
+            console.log("RRRRRRRRRRRR Result of POWER");
+            console.log(temp);
+            console.log("RRRRRRRRRRRRRR")
+        }
+
+
+    }
+    return temp;
+    
+
 }

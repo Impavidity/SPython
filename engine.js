@@ -9,6 +9,9 @@ function Engine() {
     var ObjectClass = require("./Object");
     var ResFuncSet = require("./Res");
     var _DEGUG = false;
+    var breakTag=false;
+    var returnTagStack=new Array();
+    var whileTagStack=new Array();
     /*
     Reviewed
     */
@@ -22,10 +25,39 @@ function Engine() {
         console.log(context.printEntry());
     }
 
+
+    function _exec_suite(ast,context) {
+        debug = true;
+        if (debug) {console.log("============");console.log(ast);console.log(ast.sons.length);}
+        for (var item in ast.sons) {
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!");
+            console.log(ast.sons[item]);
+            if (ast.sons[item].type == "SIMPLE_STMT")
+                _exec_simple_stmt(ast.sons[item],context);
+            else if (ast.sons[item].type == "STMT")
+                _exec_stmt(ast.sons[item],context);
+            else {
+                console.log("Exec Suite Error :"+item);
+            }
+        }
+    }
+
+    this._exec_func_out = function(ast,context) {
+        console.log("In EXEC FUNC");
+        console.log(ast.sons);
+        console.log(context.printEntry());
+        for (var item in ast.sons) {
+            if (ast.sons[item].type == "SUITE") {
+                _exec_suite(ast.sons[item],context);
+            }
+        }
+    }
     /*
     Written by Peng Function Implementation
     */
     function _exec_funcdef(ast, context, debug=_DEGUG) {
+        console.log("In Function DEF");
+        console.log(ast);
         var FRecord = new ObjectClass.SFunction();
         var funcName = "";
         for (var item in ast.sons) {
@@ -35,14 +67,15 @@ function Engine() {
                 FRecord.ast = ast;
             }
             if (ast.sons[item].type == "PARAMETERS") {
-                FRecord.argument = _exec_parameters(ast.sons[item],context);
+                FRecord.argument_list = _exec_parameters(ast.sons[item],context);
             }
         }
         var func = new ObjectClass.SObject();
-        func.type = "FUNC";
+        func.type = "Func";
         func.value = FRecord;
         func.name = funcName;
         context.allEntry[funcName] = func;
+        console.log(context.printEntry());
     }
 
     function _exec_parameters(ast,context, debug=_DEGUG){
@@ -52,10 +85,12 @@ function Engine() {
     }
 
     function _exec_varargslist(ast, context, debug=_DEGUG) {
+        debug = true;
         var args = new Array();
+        if (debug) {console.log("var AST #####"); console.log(ast.sons); console.log("#####") }
         for (var item in ast.sons) {
             if (ast.sons[item].type == "FPDEF") {
-                args.push(_exec_fpdef(ast.sons[item]));
+                args.push(_exec_fpdef(ast.sons[item],context));
             }
             if (ast.sons[item].type == "=" || ast.sons[item].type == "*" || ast.sons[item].type == "**") {
                 var op = new ObjectClass.SObject();
@@ -64,7 +99,7 @@ function Engine() {
                 args.push(op);
             }
             if (ast.sons[item].type == "TEST") {
-                args.push(_exec_test(ast.sons[item]));
+                args.push(_exec_test(ast.sons[item],context));
             }
             if (ast.sons[item].type == "NAME") {
                 var name = new ObjectClass.SObject();
@@ -73,34 +108,59 @@ function Engine() {
                 args.push(name);
             }
         }
+        if (debug) {console.log("Func Args #####"); console.log(args); console.log("#####") }
         return args;
     }
 
     function _exec_fpdef(ast, context, debug=_DEGUG) {
-        var fp = ObjectClass.SObject();
-        if (ast.sons[0]=="NAME") {
+        debug = true;
+        var fp = new ObjectClass.SObject();
+        if (debug) {console.log("FPDEF #####"); console.log(ast); console.log("#####") }
+        if (ast.sons[0].type=="NAME") {
             fp.name = ast.sons[0].value;
             fp.type = "Identity";
         }
-        if (ast.sons[0]== "FPLIST") {
+        if (ast.sons[0].type== "FPLIST") {
             return -1;
         }
+        if (debug) {console.log("FPDEF #####"); console.log(fp); console.log("#####") }
         return fp;
     }
 
+
     function _exec_classdef(ast, context, debug=_DEGUG) {
-        
+        var CRecord = new ObjectClass.SClass();
+        var className = "";
+        for (var item in ast.sons) {
+            if (ast.sons[item].type == "NAME") {
+                className = ast.sons[item].value;
+                CRecord.name = className;
+            }
+            if (ast.sons[item].type == "TESTLIST") {
+                CRecord.father = _exec_testlist(ast.sons[item], context);
+            }
+            if (ast.sons[item].type == "SUITE") {
+                _exec_suite(ast.sons[item], CRecord);
+            }
+        }
+        var cls = new ObjectClass.SObject();
+        cls.type = "Class";
+        cls.value = CRecord;
+        cls.name = className;
+        console.log(CRecord.printEntry());
+        context.allEntry[className] = cls;
     }
 
     /*
     Reviewed
     */
     function _exec_stmt(ast, context, debug=_DEGUG) {
-        if (debug) console.log(ast);
+        console.log(context.printEntry());
         if (ast.type == "STMT") {
             if (ast.sons.length == 1) {
-                if (ast.sons[0].type == "SIMPLE_STMT")
+                if (ast.sons[0].type == "SIMPLE_STMT") {
                     _exec_simple_stmt(ast.sons[0], context);
+                }
                 else if (ast.sons[0].type == "COMPOUND_STMT")
                     _exec_compound_stmt(ast.sons[0], context);
             } else {
@@ -128,6 +188,10 @@ function Engine() {
                     _exec_classdef(ast.sons[0], context);
             }
         }
+    }
+
+    function _exec_for_stmt(ast, context) {
+        // wait for list structure
     }
     /*
     Revised by Peng
@@ -167,10 +231,13 @@ function Engine() {
                     if (ast.sons[1].type == "SUITE") {
                         _exec_suite(ast.sons[1], context);
                     }
+                    if (breakTagStack[breakTagStack.length-1]) break;
                 }
             }
         }
     }
+
+    
     
 
     /*
@@ -178,8 +245,7 @@ function Engine() {
     */
     //simle stmt
     function _exec_simple_stmt(ast, context, debug=_DEGUG) {
-        if (debug) console.log(ast);
-        debug = true;
+        console.log(context.printEntry());
         if (debug) {console.log("|||CONTEXT LENGTH|||");console.log(context.getEntryLength());console.log("||||||");}
         if (ast.type == "SIMPLE_STMT") {
             if (ast.sons.length == 1) {
@@ -258,6 +324,7 @@ function Engine() {
     Revised by Peng : unfinished
     */
     function _exec_testlist(ast, context, debug=_DEGUG) {
+        console.log(context.printEntry());
         debug = true;
         if (debug) {console.log("TESTLIST AST #####");console.log(ast);console.log("#####");}
         var args = new Array();
@@ -346,6 +413,7 @@ function Engine() {
     Revised by Peng : ERROR!!!!! Not Boolean here!!!
     */
     function _exec_comparison(ast,context,debug=_DEGUG) {
+        console.log(context.printEntry());
         debug = true;
         var result;
         var args = new Array();
@@ -355,7 +423,7 @@ function Engine() {
                 if(ast.sons[i].type == "EXPR")
                    args.push(_exec_expr(ast.sons[i], context));
                 else if(ast.sons[i].type == "COMP_OP")
-                   args.push(_exec_comp_op(a.sons[i],context));
+                   args.push(_exec_comp_op(ast.sons[i],context));
             }
             if (debug) {console.log("COMPARISON Args #####");console.log(args);console.log("#####");}
             result = ResFuncSet.RES_comparison(args);
@@ -370,7 +438,7 @@ function Engine() {
     function _exec_comp_op(ast, context) {
         var result = new ObjectClass.SObject();
         result.type = "Option";
-        result.value = ast.type;
+        result.value = ast.value;
         return result;
     }
 
@@ -567,6 +635,7 @@ function Engine() {
     Revised by Peng
     */
     function _exec_factor(ast,context,debug=_DEGUG) {
+        console.log(context.printEntry());
         debug = true;
         if (debug) {console.log("FACTOR AST #####"); console.log(ast);console.log("#####");}
         var result;
@@ -596,14 +665,18 @@ function Engine() {
     /*
     Written by Peng : Unfinished
     */
-    function _exec_power(ast, context) {
+    function _exec_power(ast, context, debug=_DEGUG) {
+        console.log(context.printEntry());
         var result;
         var args = new Array();
+        debug = true;
+        if (debug) {console.log("POWER AST #####");console.log(ast);console.log("#####")}
         if (ast.type == "POWER") {
             for (var key in ast.sons) {
                 if (ast.sons[key].type == "ATOM") {
                     args.push(_exec_atom(ast.sons[key], context));
                 } else if (ast.sons[key].type == "TRAILER") {
+                    console.log("++++++++++++++++++++++++");console.log(ast.sons[key]);
                     args.push(_exec_trailer(ast.sons[key], context));
                 } else if (ast.sons[key].type == "**") {
                     var op = new ObjectClass.SObject();
@@ -617,9 +690,77 @@ function Engine() {
         }
         if (args.length == 1) {
             return args[0];
+        } else {
+            if (debug) {console.log("POWER ARGUE #####");console.log(args);console.log("#####")}
+            result = ResFuncSet.RES_power(args,context);
+            if (debug) {console.log("POWER RESULT #####");console.log(result);console.log("#####")}
+            return result;
         }
-        //result = /*FUNCTION*/(args);
-        //return result;
+    }
+
+
+    function _exec_trailer(ast, context, debug=_DEGUG) {
+        var op = new ObjectClass.SObject()
+        if (ast.sons.length == 0) {
+            op.type = "FunNull";
+        }
+        if (ast.sons.length == 1) {
+            if (ast.sons[0].type == "NAME") {
+                op.type = "NAME";
+                op.value = ast.sons[0].value;
+            } else if (ast.sons[0].type == "ARGLIST") {
+                op.type = "ARGLIST";
+                op.value = _exec_arglist(ast.sons[0], context);
+            }
+        }
+        if (debug) {console.log("TRAILER RESULT #####");console.log(op);console.log("#####")}
+        return op;
+    }
+
+    function _exec_arglist(ast, context) {
+        var args = new Array();
+        for (var item in ast.sons) {
+            if (ast.sons[item].type == "ARGUMENT") {
+                args.push(_exec_argument(ast.sons[item],context));
+            }
+            if (ast.sons[item].type == "*" || ast.sons[item].type == "**") {
+                var op = new ObjectClass.SObject();
+                op.type = "Option";
+                op.value = ast.sons[item].type;
+                args.push(op);
+            }
+            if (ast.sons[item].type == "TEST") {
+                args.push(_exec_test(ast.sons[item], context));
+            }
+        }
+        return args;
+    }
+
+    function get_test_argument(ast) {
+        while (ast.type != "NAME") {
+            ast = ast.sons[0];
+        }
+        return ast.value;
+    }
+
+    function _exec_argument(ast, context) {
+        var result = new ObjectClass.SObject();
+        if (ast.sons.length>1) {
+            if (ast.sons[1].type == "TEST") {
+                result.name = get_test_argument(ast.sons[0]);
+                var arg = _exec_test(ast.sons[1],context);
+                result.type = arg.type;
+                result.value = arg.value;
+                //result.name = arg.name;
+            } else if (ast.sons[1].type == "COMP_FOR"){
+                // To be finished
+            }
+        } else if (ast.sons.length == 1) {
+            result = _exec_test(ast.sons[0], context);
+            result.name = "_un_assigned_";
+
+        }
+        return result;
     }
     
     /*
@@ -633,12 +774,19 @@ function Engine() {
             if (ast.sons[0].type == "NAME") {
                 result.name = ast.sons[0].value;
                 result.type = "Identity";
-                
-                if (context.allEntry.contains_key(result.name)) {
-                    var temp = context.allEntry[result.name];
-                    result.type = temp.type;
-                    result.value = temp.value;
+                temp_context = context;
+                while (temp_context != null && temp_context != undefined) {
+                    if (temp_context.allEntry[result.name]!=undefined) {
+                        var temp = temp_context.allEntry[result.name];
+                        result.type = temp.type;
+                        result.value = temp.value;
+                        break;
+                    } else {
+                        temp_context = temp_context.outFunction;
+                    }
                 }
+                console.log(context.printEntry());
+                console.log(result);
                 return result;
             } else if (ast.sons[0].type == "NUMBER") {
                 result.value = Number(ast.sons[0].value);
@@ -689,14 +837,19 @@ function Engine() {
     }
 
     function _exec_flow_stmt(ast,context){
+        console.log(context.printEntry());
         if(ast.type == "FLOW_STMT"){
             if(ast.sons.length == 1){
-                if(ast.sons[0].type =="BREAK_STMT")
+                if(ast.sons[0].type =="BREAK_STMT") {
                     console.log("break");
+                    breakTag = true;
+                }
                 else if(ast.sons[0].type == "CONTINUE_STMT")
                     console.log("continue");
-                else if(ast.sons[0].type == "RETURN_STMT")
+                else if(ast.sons[0].type == "RETURN_STMT") {
                     _exec_return_stmt(ast.sons[0],context);
+                    console.log("ENTER RRRRRRRRRRRRRRReturn");
+                }
                 else if(ast.sons[0].type == "RAISE_STMT")
                     _exec_raise_stmt(ast.sons[0],context);
             }
@@ -704,6 +857,20 @@ function Engine() {
                 console.log("Flow_Stmt Length Error");
             }
         }
+    }
+
+    function _exec_return_stmt(ast, context) {
+        if (ast.sons[0].type == "RETURN") {
+            var args = _exec_testlist(ast.sons[1],context);
+            var result = new Array();
+            for (var item in args) {
+                result.push(args[item]);
+            }
+            console.log("QQQQQQQQQQQQQQQQQQQQQQQQQQ");
+            console.log(result);
+            context.return_value = result;
+        }
+        
     }
     
 

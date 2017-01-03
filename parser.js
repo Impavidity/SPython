@@ -23,10 +23,9 @@ function Parser(file) {
             console.log(currentToken);
             return true;
         } else {
-            // console.log("Error");
-            // console.log("My Type: "+currentToken.type+" But expect: "+type);
-            return false;
-            //process.exit();
+            console.log("Error : My Type: "+currentToken.type+" But expect: "+type);
+            //return false;
+            process.exit();
         }
     }
 
@@ -350,7 +349,7 @@ function Parser(file) {
         _match("IF");
         treeNode.sons.push(_test());
         _match(":");
-        treeNode.sons.push(_suite(indnet+1));
+        treeNode.sons.push(_suite(indent+1));
         while (currentToken.type == "ELIF") {
             _match("ELIF");
             treeNode.sons.push(_test());
@@ -368,14 +367,16 @@ function Parser(file) {
 
     var counti=0;
     function _suite(indent) {
-        console.log("current indent : "+indent);
-        console.log("current counti : "+counti);
+        //console.log("current indent : "+indent);
+        //console.log("current counti : "+counti);
         var treeNode = new treeNodeClass();
         treeNode.type = "SUITE";
         if (currentToken.type == "NEWLINE") {
-            _match("NEWLINE");
-            counti = 0;
             do {
+                if (currentToken.type == "NEWLINE") {
+                    _match("NEWLINE");
+                    counti = 0;
+                }
                 while (currentToken.type == "INDENT") {
                     _match("INDENT");
                     counti += 1;
@@ -388,13 +389,9 @@ function Parser(file) {
                 console.log("i:"+counti+" base_indent:"+indent);
                 if (counti == indent) {
                     treeNode.sons.push(_stmt(indent));
-                } else {
-                    return treeNode;
                 }
-                _match("NEWLINE");
-
-            } while (true);
-
+            } while (counti == indent);
+            return treeNode;
 
         } else {
             treeNode.sons.push(_simple_stmt());
@@ -521,6 +518,7 @@ function Parser(file) {
         // console.log("I am in comparison");
         treeNode.sons.push(_expr());
         while (comp_op.indexOf(currentToken.type)!=-1) {
+            currentToken.type = "COMP_OP";
             op = currentToken;
             _match(currentToken.type);
             treeNode.sons.push(op);

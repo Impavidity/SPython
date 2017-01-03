@@ -28,8 +28,8 @@ function FileMode(fileName) {
     //console.log(context);
 
     var engineClass = require("./engine");
-    var engine = new engineClass();
+    global.engine = new engineClass();
 
-    engine._exec_file_input(ast, context);
+    global.engine._exec_file_input(ast, context);
     
 }
