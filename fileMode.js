@@ -20,7 +20,7 @@ function FileMode(fileName) {
     var parserClass = require('./parser');
     var parser = new parserClass(file);
     var ast = parser._file_input(indent=0);
-    checkTree(ast,0);
+    //checkTree(ast,0);
     //console.log(ast);
     
     var ObjectClass = require("./Object");
@@ -29,7 +29,7 @@ function FileMode(fileName) {
 
     var engineClass = require("./engine");
     global.engine = new engineClass();
-
+    context.name = "main";
     global.engine._exec_file_input(ast, context);
     
 }

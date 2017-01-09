@@ -10,7 +10,7 @@ fplist: fpdef (',' fpdef)* [',']
 stmt: simple_stmt | compound_stmt
 simple_stmt: (expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | exec_stmt | assert_stmt)
 compound_stmt: if_stmt | while_stmt | for_stmt | funcdef | classdef 
-expr_stmt: testlist augassign testlist | testlist '=' testlist
+expr_stmt: testlist augassign testlist | testlist '=' testlist | testlist
 augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
 print_stmt: 'print' testlist
 del_stmt: 'del' exprlist

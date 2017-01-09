@@ -23,7 +23,7 @@ Array.prototype.contains_key = function (element) {
 
 // or_test: and_test ('or' and_test)*
 exports.RES_or_test = function(array) {
-    args_num=array.length;
+    var args_num=array.length;
     /*Implemented by Peng*/
     if (args_num == 1) {
         return array[0];
@@ -38,12 +38,12 @@ exports.RES_or_test = function(array) {
         }
         // console.log(i);
         if(i==args_num){
-            temp=array[i-1].copy();
+            var temp=array[i-1].copy();
             temp.name="";
             return temp;
         }
         else{
-            temp=array[i].copy();
+            var temp=array[i].copy();
             temp.name="";
             return temp;
         }
@@ -53,7 +53,7 @@ exports.RES_or_test = function(array) {
 }
 
 exports.RES_and_test = function(array) {
-    args_num=array.length;
+    var args_num=array.length;
     /*Implemented by Peng*/
     if (args_num == 1) {
         return array[0];
@@ -148,7 +148,7 @@ exports.RES_comparison = function(array) {
     }
     /**/
 
-    args_num=(array.length+1)/2;
+    var args_num=(array.length+1)/2;
     res=true;
     if (args_num==1){
         res=(res && array[0].value);
@@ -181,7 +181,7 @@ exports.RES_expr = function(array) {
         }
     }
 
-    args_num=array.length;
+    var args_num=array.length;
     if(args_num>0){
         temp=array[0].copy();
         temp.name="";
@@ -209,7 +209,7 @@ exports.RES_xor_expr = function(array) {
         }
     }
 
-    args_num=array.length;
+    var args_num=array.length;
     if(args_num>0){
         temp=array[0].copy();
         temp.name="";
@@ -244,7 +244,7 @@ exports.RES_shift_expr = function(array) {
         }
     }
 
-    args_num=(array.length+1)/2;
+    var args_num=(array.length+1)/2;
     if(args_num>0){
         temp=array[0].copy();
         temp.name="";
@@ -286,14 +286,12 @@ exports.RES_arith_expr = function(array) {
         }
     }
 
-    args_num=(array.length+1)/2;
+    var args_num=(array.length+1)/2;
     if(args_num>0){
         temp=array[0].copy();
         temp.name="";
         for (i=1;i<args_num;i++){
             one_RES_arith_expr(temp,array[i*2-1],array[i*2]);
-            console.log("Calculation");
-            console.log(temp);
         }
         if (temp.type=="Boolean"){
             temp.type=="Number";             
@@ -331,7 +329,7 @@ exports.RES_term = function(array) {
         }
     }
 
-    args_num=(array.length+1)/2;
+    var args_num=(array.length+1)/2;
     if(args_num>0){
         temp=array[0].copy();
         temp.name="";
@@ -415,7 +413,7 @@ exports.RES_and_expr = function(array) {
         }
     }
 
-    args_num=array.length;
+    var args_num=array.length;
     if(args_num>0){
         temp=array[0].copy();
         temp.name="";
@@ -455,9 +453,6 @@ this.RES_expr_stmt = function(arg1,op,arg2,context) {
                     arg1[i].type = temp_args[i].type;
                     arg1[i].ismember = temp_args[i].ismember;
                     context.allEntry[arg1[i].name] = arg1[i];
-                    console.log("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
-                    console.log(context.allEntry[arg1[i].name]);    
-                    console.log(context.printEntry());            
                 }
                 else if (arg1[i].value!=null) {//context.allEntry.contains_key(arg1[i].name)
                     arg1[i].value = temp_args[i].value;
@@ -556,9 +551,6 @@ this.RES_expr_stmt = function(arg1,op,arg2,context) {
 }
 
 RES_argument = function(item,context, paracount, argument_list) {
-    console.log("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
-    console.log(argument_list);
-    console.log(item.name);
     if (item.name != "_un_assigned_") {
         context.allEntry[item.name] = item;
     } else {
@@ -569,7 +561,6 @@ RES_argument = function(item,context, paracount, argument_list) {
 }
 
 exports.RES_power = function(array, context) {
-    
     function one_RES_power(arg1,arg2){
         if(arg2.type=="NAME"){
 
@@ -614,9 +605,6 @@ exports.RES_power = function(array, context) {
                             //temp=arg1.value[start].copy();
                             temp=arg1.value[start];
                             temp.name="";
-                            console.log("999999999999999999999999999999999999999999");
-                            console.log(temp);
-                            console.log("999999999999999999999999999999999999999999");
                         }
                     }
                     else if(arg2.value[0][3]=="slice"){
@@ -782,10 +770,6 @@ exports.RES_power = function(array, context) {
         else{//**
             var temp=new SObject.SObject();
             temp.type="Number";
-            console.log("888888888888888888888888888888888888");
-            console.log(arg1);
-            console.log(arg2);
-            console.log("888888888888888888888888888888888888");
             if ((arg1.type=="Number" || arg1.type=="Boolean") && (arg2.type=="Number" || arg2.type=="Boolean")) {
                 temp.value=Math.pow(arg1.value,arg2.value);
                 return temp;
@@ -795,18 +779,27 @@ exports.RES_power = function(array, context) {
     }
 
     function get_method(op1,op2,context) {
-        if (op1.type == "Class" && (op2.type=="NAME" ||  op2.type=="ARGLIST") ) {
 
+        if (op1.type == "Class" && (op2.type=="NAME" ||  op2.type=="ARGLIST" || op2.type=="FunNull") ) {
+            var temp = op1;
+            if (op2.type == "NAME") {
+                temp = op1.value.allEntry[op2.value];
+                return temp;
+            } else if (op2.type == "ARGLIST") {
+
+            } else if (op2.type == "FunNull") {
+                return temp;
+            }
         } else if (op1.type == "Func") {
 
             if (op2.type == "ARGLIST") {
                 var subcontext = new SObject.SActiveRecord();
-                subcontext.outFunction = context;
-                console.log("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuu");
-                console.log(op2);
+                //subcontext.outFunction = context;
                 var paracount = 0;
+                if (op1.value.argument_list.length>0 && op1.value.argument_list[0].name=="self") {
+                    paracount+=1;
+                }
                 for (var i=0;i<op2.value.length;i++) {
-                    console.log("OP2 value : "+op2.value[i].type);
                     
                     if (op2.value[i].type == "*") {
                         paracount += 1;
@@ -822,25 +815,54 @@ exports.RES_power = function(array, context) {
                         RES_argument(op2.value[i],subcontext, paracount, op1.value.argument_list);
                     }
                 } 
-                console.log("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                console.log(op1.value.ast);
-                console.log(subcontext.printEntry());
+                
+                for (var para=0;para<op1.value.argument_list.length;para++) {
+                    if (para+1<op1.value.argument_list && op1.value.argument_list[para].type == "Identity" && op1.value.argument_list[para+1].value == "=") 
+                        if (subcontext.allEntry[op1.value.argument_list[para].name] == undefined) {
+                            subcontext.allEntry[op1.value.argument_list[para].name] = op1.value.argument_list[para+2];
+                            subcontext.allEntry[op1.value.argument_list[para].name].name = op1.value.argument_list[para].name;
+                            para += 3;
+                        } 
+                }
+
+
                 subcontext.name = op1.value.name;
+                subcontext.outFunction = op1.value.closure_active_record;
                 global.engine._exec_func_out(op1.value.ast,subcontext);
                 var result = subcontext.return_value;
-                console.log("PPPPPPPPPPPPPPPPPPPPPPPPPPPP");
-                console.log(result);
+                return result;
+            } else if (op2.type == "FunNull") {
+                var subcontext = new SObject.SActiveRecord();
+                for (var para=0;para<op1.value.argument_list.length;para++) {
+                    if (para+1<op1.value.argument_list.length && op1.value.argument_list[para].type == "Identity" && op1.value.argument_list[para+1].value == "=") {
+                        if (subcontext.allEntry[op1.value.argument_list[para].name] == undefined) {
+                            subcontext.allEntry[op1.value.argument_list[para].name] = op1.value.argument_list[para+2];
+                            subcontext.allEntry[op1.value.argument_list[para].name].name = op1.value.argument_list[para].name;
+                            para += 3;
+                        } 
+                    }
+                }
+                subcontext.name = op1.value.name;
+                subcontext.outFunction = op1.value.closure_active_record;
+                global.engine._exec_func_out(op1.value.ast,subcontext);
+                var result = subcontext.return_value;
+                return result;
             }
         }
-        return result;
+        
     }
-
-    args_num=array.length;
+    var args_num=array.length;
+    var temp=null;
     if(args_num>0){
         temp=array[0].copy();
         temp.name="";
-        for (i=1;i<args_num;i++){
+        for (var i=1;i<args_num;i++){
             if(temp.type == "Class"){
+                temp = get_method(temp, array[i], context);
+                if (temp != null && temp.length > 1) console.log("Can not return several value");
+                if (temp != null && temp.length>=1)
+                    temp = temp[0];
+                
                 /*
                 temp = context.allEntry[arg1.name];
                 for (var i=1; i<array.length; i++) {
@@ -861,30 +883,24 @@ exports.RES_power = function(array, context) {
                 }
                 */
             } else if (temp.type == "Func") {
-                console.log("AAAAAAAAAAAAAAAAAAAAa");
-                console.log(array);
-                // for (var i=1; i<array.length; i++) {
-                //     console.log("iiiiiiiiiiiiiiiiiiiiiiiiii");
-                //     console.log(temp);
-                //     console.log(array[i]);
-                //     console.log("iiiiiiiiiiiiiiiiiiiiiiiiii");
                 temp = get_method(temp,array[i],context);
-                if (temp.length > 1) console.log("Can not return several value");
-                temp = temp[0];
-                console.log("RRRRRRRRRRRR Result of POWER");
-                console.log(temp);
-                console.log("RRRRRRRRRRRRRR");
+                if (temp != null && temp.length > 1) console.log("Can not return several value");
+                if (temp != null && temp.length>=1)
+                    temp = temp[0];
+                //console.log(temp);
+                
             }
             else {
                 temp = one_RES_power(temp,array[i]);
             }
         }
         //temp.type=="Number";
-        console.log(temp);
-        console.log("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-        return temp;
+        //return temp;
     }   
     else 
         console.log("RES_power Error:null array");
+    if (temp!=null && temp!=undefined)
+        return temp;
+    else return null;
 
 }

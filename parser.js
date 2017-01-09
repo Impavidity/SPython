@@ -17,10 +17,10 @@ function Parser(file) {
     var base_indent = 0;
 
     function _match(type) {
-        // console.log(currentToken);
+        //console.log(currentToken);
         if (currentToken.type == type) {
             currentToken = lexer.getToken();
-            console.log(currentToken);
+            //console.log(currentToken);
             return true;
         } else {
             console.log("Error : My Type: "+currentToken.type+" But expect: "+type);
@@ -386,7 +386,7 @@ function Parser(file) {
                     counti=0;
                     continue;
                 }
-                console.log("i:"+counti+" base_indent:"+indent);
+                //console.log("i:"+counti+" base_indent:"+indent);
                 if (counti == indent) {
                     treeNode.sons.push(_stmt(indent));
                 }
@@ -423,6 +423,8 @@ function Parser(file) {
             treeNode.sons.push(currentToken);
             _match("=");
             treeNode.sons.push(_testlist());
+        } else if (currentToken.type == "NEWLINE" || currentToken.type == "EOF") {
+            _match(currentToken.type);
         } else {
             if (augassign.indexOf(currentToken.type)!=-1) {
                 currentToken.type = "AUGASSIGN";

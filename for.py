@@ -1,4 +1,4 @@
-v = [1,2,3]
+a = 0
 for v in [1,2,3]:
-    print "haha"
-print v
+	a += v
+print a,v

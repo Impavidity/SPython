@@ -6,3 +6,4 @@ def fi(a):
 	return fi(a-1) + fi(a-2)
 
 e = fi(10)
+print e

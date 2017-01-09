@@ -40,18 +40,48 @@ exports.SObject = function(){
     this.name="";
     this.value=null;
     this.ismember=0;//1:list_member;2:Tuple_member;31:dic_member_key,32:dic_member_value;0:else
-    /*
-    this.toString=function(){       
-        if (this.name.length> 0){
-            ret = "{" + this.type+"  "+this.name+": "+this.value+ "}";
-            return ret;
+    
+    this.toString=function(){
+        if(this.type=="List"){
+            ret="[";
+            for (i in this.value){
+                ret=ret+this.value[i]+", ";
+            }
+            return ret.substring(0,ret.length-2) + "]";
+        }
+        else if(this.type=="Tuple"){
+            ret="(";
+            for (i in this.value){
+                ret=ret+this.value[i]+", ";
+            }
+            return ret.substring(0,ret.length-2) + ")";
+        }  
+        else if(this.type=="Dictionary"){
+            ret="{";
+            for (i in this.value){
+                ret=ret+i.substr(2)+" : "+this.value[i]+", ";
+            }
+            return ret.substring(0,ret.length-2) + "}";
+        } 
+        else if(this.type=="Number" || this.type=="Char" || this.type=="String" || this.type=="Boolean"){
+            return String(this.value);
         }
         else{
-            ret = "{ }"
-            return ret;
+            return "Tostring undefined type";
         }
+
+
+
+        // if (this.name.length> 0){
+        //     ret = "{" + this.type+"  "+this.name+": "+this.value+ "}";
+        //     return ret;
+        // }
+        // else{
+        //     ret = "{ }"
+        //     return ret;
+        // }
     }
-    */
+    
     this.copy=function(){
         var result =new exports.SObject();
         result.type=this.type;
@@ -126,6 +156,7 @@ exports.SFunction = function(){
     this.name = "";
     this.ast = null;
     this.argument_list = [];
+    this.closure_active_record = null;
     this.outFunction = null;
     this.return_value = null;
     /*

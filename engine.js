@@ -8,7 +8,6 @@ function Engine() {
 
     var ObjectClass = require("./Object");
     var ResFuncSet = require("./Res");
-    var debug = false;
     var breakTag=false;
     var returnTag=false;
     var continueTag=false;
@@ -24,16 +23,16 @@ function Engine() {
                     _exec_stmt(ast.sons[key], context);
             }
         }
-        console.log(context.printEntry());
+        // console.log(context.printEntry());
+        // for (var entry in context.allEntry) {
+        //     console.log(context.allEntry[entry]);
+        // }
     }
 
 
     function _exec_suite(ast,context) {
         debug = true;
-        if (debug) {console.log("============");console.log(ast);console.log(ast.sons.length);}
         for (var item in ast.sons) {
-            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!");
-            console.log(ast.sons[item]);
             if (ast.sons[item].type == "SIMPLE_STMT")
                 _exec_simple_stmt(ast.sons[item],context);
             else if (ast.sons[item].type == "STMT")
@@ -47,9 +46,6 @@ function Engine() {
     }
 
     this._exec_func_out = function(ast,context) {
-        console.log("In EXEC FUNC");
-        console.log(ast.sons);
-        console.log(context.printEntry());
         for (var item in ast.sons) {
             if (ast.sons[item].type == "SUITE") {
                 _exec_suite(ast.sons[item],context);
@@ -59,14 +55,14 @@ function Engine() {
                 return;
             }
         }
+        //console.log(context.printEntry());
     }
     /*
     Written by Peng Function Implementation
     */
     function _exec_funcdef(ast, context, debug) {
-        console.log("In Function DEF");
-        console.log(ast);
         var FRecord = new ObjectClass.SFunction();
+        FRecord.closure_active_record = context;
         var funcName = "";
         for (var item in ast.sons) {
             if (ast.sons[item].type == "NAME"){
@@ -83,7 +79,6 @@ function Engine() {
         func.value = FRecord;
         func.name = funcName;
         context.allEntry[funcName] = func;
-        console.log(context.printEntry());
     }
 
     function _exec_parameters(ast,context, debug){
@@ -95,7 +90,6 @@ function Engine() {
     function _exec_varargslist(ast, context, debug) {
         debug = true;
         var args = new Array();
-        if (debug) {console.log("var AST #####"); console.log(ast.sons); console.log("#####") }
         for (var item in ast.sons) {
             if (ast.sons[item].type == "FPDEF") {
                 args.push(_exec_fpdef(ast.sons[item],context));
@@ -116,14 +110,12 @@ function Engine() {
                 args.push(name);
             }
         }
-        if (debug) {console.log("Func Args #####"); console.log(args); console.log("#####") }
         return args;
     }
 
     function _exec_fpdef(ast, context, debug) {
         debug = true;
         var fp = new ObjectClass.SObject();
-        if (debug) {console.log("FPDEF #####"); console.log(ast); console.log("#####") }
         if (ast.sons[0].type=="NAME") {
             fp.name = ast.sons[0].value;
             fp.type = "Identity";
@@ -131,7 +123,6 @@ function Engine() {
         if (ast.sons[0].type== "FPLIST") {
             return -1;
         }
-        if (debug) {console.log("FPDEF #####"); console.log(fp); console.log("#####") }
         return fp;
     }
 
@@ -155,15 +146,15 @@ function Engine() {
         cls.type = "Class";
         cls.value = CRecord;
         cls.name = className;
-        console.log(CRecord.printEntry());
+        console.log(cls);
         context.allEntry[className] = cls;
+        console.log(cls.value.printEntry());
     }
 
     /*
     Reviewed
     */
     function _exec_stmt(ast, context, debug) {
-        console.log(context.printEntry());
         if (ast.type == "STMT") {
             if (ast.sons.length == 1) {
                 if (ast.sons[0].type == "SIMPLE_STMT") {
@@ -200,14 +191,17 @@ function Engine() {
 
     function _exec_for_stmt(ast, context) {
         // wait for list structure
-        var iter = _exec_testlist(ast.sons[0], context);
+        var iter = _exec_exprlist(ast.sons[0], context);
         var iterList = _exec_testlist(ast.sons[1], context);
         if (iter.length == 1) {
             var base = iter[0];
-            for (var i in iterList[0]) {
-                iter = iterList[i];
-                context[base.name] = iter;
-                _exec_suite(ast.sons[2]);
+
+            for (var i in iterList[0].value) {
+                iter = iterList[0].value[i];
+                iter.name = base.name;
+                context.allEntry[base.name] = iter;
+
+                _exec_suite(ast.sons[2],context);
                 if (breakTag) {
                     breakTag = false;
                     return;
@@ -216,8 +210,23 @@ function Engine() {
         } else if (iter.length == 2) {
             var base1 = iter[0];
             var base2 = iter[1];
-            for (var i in iterList) {
-
+            for (var i in iterList[0].value) {
+                iter=iterList[0].value[i];
+                iter.name=base2.name;
+                var temp=new ObjectClass.SObject();
+                temp.name=base1.name;
+                if(i[0]=="S")
+                    temp.type="String";
+                else(i[0]=="N")
+                    temp.type="Number";
+                temp.value=i.substr(2);
+                context.allEntry[base1.name]=temp;
+                context.allEntry[base2.name]=iter;
+                _exec_suite(ast.sons[2],context);
+                if (breakTag) {
+                    breakTag = false;
+                    return;
+                }
             }
         } else {
             console.log("FOR_exec_for_stmt ARGUE LEN ERROR");
@@ -233,8 +242,6 @@ function Engine() {
             for (var key = 0; key < ast.sons.length; key += 2) {
                 if (ast.sons[key].type == "TEST") {
                     var result = _exec_test(ast.sons[key], context);
-                    console.log("&&&&&&&&&&&&&&&&&&&&&&&&");
-                    console.log(result);
                     if (result.value) {
                         if (ast.sons[key+1].type == "SUITE") {
                             _exec_suite(ast.sons[key+1], context);
@@ -282,8 +289,6 @@ function Engine() {
     */
     //simle stmt
     function _exec_simple_stmt(ast, context, debug) {
-        console.log(context.printEntry());
-        if (debug) {console.log("|||CONTEXT LENGTH|||");console.log(context.getEntryLength());console.log("||||||");}
         if (ast.type == "SIMPLE_STMT") {
             if (ast.sons.length == 1) {
                 if (ast.sons[0].type == "EXPR_STMT")
@@ -314,8 +319,6 @@ function Engine() {
     */
     function _exec_expr_stmt(ast, context, debug) {
         debug = true;
-        if (debug) {console.log("|||CONTEXT LENGTH|||");console.log(context.getEntryLength());console.log("||||||");}
-        if (debug) {console.log("EXPR STMT AST #####");console.log(ast);console.log("#####");}
         var args = new Array();
         var result;
         if (ast.type == "EXPR_STMT") {
@@ -334,18 +337,16 @@ function Engine() {
                         console.log("Can not find type "+ast.sons[key].type);
                     }
                 }
-                if (debug) {console.log("EXPR STMT Args #####"); console.log(args); console.log("#####") }
-                if (debug) {console.log("|||CONTEXT LENGTH Before|||");console.log(context.getEntryLength());console.log("||||||");}
                 result = ResFuncSet.RES_expr_stmt(args[0],args[1],args[2],context);
-                for (var item in result[0].value) {
-                    console.log("----")
-                    console.log(result[0].value[item].value);
-                }
-                if (debug) {console.log("|||CONTEXT LENGTH After|||");console.log(context.getEntryLength());console.log("||||||");}
-                if (debug) {console.log(context.printEntry());}
                 return result;
             }
-            else {
+            if (ast.sons.length == 1){
+                if (ast.sons[0].type == "TESTLIST") {
+                    args.push(_exec_testlist(ast.sons[0], context));
+                } else {
+                    console.log("Expr Stmt Leng=1 Type Error");
+                }
+            } else {
                 console.log("Expr Stmt Length Error");
             }
         }
@@ -365,9 +366,7 @@ function Engine() {
     Revised by Peng : unfinished
     */
     function _exec_testlist(ast, context, debug) {
-        console.log(context.printEntry());
         debug = true;
-        if (debug) {console.log("TESTLIST AST #####");console.log(ast);console.log("#####");}
         var args = new Array();
         var result;
         if (ast.type == "TESTLIST") {
@@ -376,7 +375,6 @@ function Engine() {
                     args.push(_exec_test(ast.sons[key], context));
             }
         }
-        if (debug) {console.log("TESTLIST Args #####");console.log(args);console.log("#####");}
         result = /*Make Struct*/(args);
         return result;
     }
@@ -428,7 +426,6 @@ function Engine() {
                     args.push(_exec_not_test(ast.sons[key], context));
                 }
             }
-            if (debug) {console.log("AND TEST Args #####");console.log(args);console.log("#####");}
             result = ResFuncSet.RES_and_test(args);
             return result;
         }
@@ -454,11 +451,9 @@ function Engine() {
     Revised by Peng : ERROR!!!!! Not Boolean here!!!
     */
     function _exec_comparison(ast,context,debug) {
-        console.log(context.printEntry());
         debug = true;
         var result;
         var args = new Array();
-        if (debug) {console.log("COMPARISON AST TREE #####");console.log(ast);console.log("#####");}
         if(ast.type == "COMPARISON"){
             for(i=0;i<ast.sons.length;i++) {
                 if(ast.sons[i].type == "EXPR")
@@ -466,9 +461,7 @@ function Engine() {
                 else if(ast.sons[i].type == "COMP_OP")
                    args.push(_exec_comp_op(ast.sons[i],context));
             }
-            if (debug) {console.log("COMPARISON Args #####");console.log(args);console.log("#####");}
             result = ResFuncSet.RES_comparison(args);
-            if (debug) {console.log("COMPARISON Result #####");console.log(result);console.log("#####");}
             return result;
         }
     }
@@ -489,13 +482,16 @@ function Engine() {
     Revised by Peng: unfinished
     */
     function _exec_print_stmt(ast,context,debug) {
-        if (debug) console.log(ast);
         var result;
         if(ast.type == "PRINT_STMT"){
             if(ast.sons.length == 1) {
                 if (ast.sons[0].type == "TESTLIST") {
                     result = _exec_testlist(ast.sons[0], context);
-                    /*PRINT*/(result);
+                    var ret = "";
+                    for (var item in result) {
+                        ret += result[item].toString()+" "
+                    }
+                    console.log(ret);
                 }
             }
             else {
@@ -535,13 +531,14 @@ function Engine() {
     }
 
     function _exec_exprlist(ast,context) {
+        var args = new Array();
         if (ast.type == "EXPRLIST") {
             for (var key in ast.sons) {
                 if (ast.sons[key].type == "EXPR")
-                    _exec_expr(ast.sons[key], context);
+                    args.push(_exec_expr(ast.sons[key], context));
             }
         }
-        return //
+        return args;
     }
 
     /*
@@ -557,7 +554,6 @@ function Engine() {
                     args.push(_exec_xor_expr(ast.sons[key],context));
             }
             result = ResFuncSet.RES_expr(args);
-            if (debug) {console.log("EXPR Result #####");console.log(result);console.log("#####");}
             return result;
         }
     }
@@ -615,7 +611,6 @@ function Engine() {
                     
             }
             result = ResFuncSet.RES_shift_expr(args);
-            if (debug) {console.log("SHIFT EXPR #####");console.log(result);console.log("#####");}
             return result;
         }
     }
@@ -638,9 +633,7 @@ function Engine() {
                     args.push(op);
                 }
             }
-            if (debug) {console.log("ARITH Arguments #####");console.log(args);console.log("#####");}
             result = ResFuncSet.RES_arith_expr(args);
-            if (debug) {console.log("ARITH EXPR Result #####");console.log(result);console.log("#####");}
             return result;
         }
     }
@@ -652,8 +645,6 @@ function Engine() {
         debug = true;
         var result;
         var args = new Array();
-        console.log("################################# SONS length");
-        console.log(ast.sons[0]);
         if(ast.type == "TERM"){
             for(var key in ast.sons){
                 if(ast.sons[key].type == "FACTOR") {
@@ -667,9 +658,7 @@ function Engine() {
                     args.push(op);
                 }
             }
-            if (debug) {console.log("TERM Arguments #####");console.log(args);console.log("#####");}
             result = ResFuncSet.RES_term(args);
-            if (debug) {console.log("TERM Result #####");console.log(result);console.log("#####");}
             return result;
         }
     }
@@ -678,9 +667,7 @@ function Engine() {
     Revised by Peng
     */
     function _exec_factor(ast,context,debug) {
-        console.log(context.printEntry());
         debug = true;
-        if (debug) {console.log("FACTOR AST #####"); console.log(ast);console.log("#####");}
         var result;
         var args = new Array();
         if(ast.type == "FACTOR"){
@@ -697,9 +684,7 @@ function Engine() {
                     return _exec_power(ast.sons[key], context);
                 }
             }
-            if (debug) {console.log("FACTOR Args #####");console.log(args);console.log("#####")}
             result = ResFuncSet.RES_factor(args);
-            if (debug) {console.log("FACTOR Result #####");console.log(result);console.log("#####");}
             return result;
         }
     }
@@ -709,17 +694,14 @@ function Engine() {
     Written by Peng : Unfinished
     */
     function _exec_power(ast, context, debug) {
-        console.log(context.printEntry());
         var result;
         var args = new Array();
         debug = true;
-        if (debug) {console.log("POWER AST #####");console.log(ast);console.log("#####")}
         if (ast.type == "POWER") {
             for (var key in ast.sons) {
                 if (ast.sons[key].type == "ATOM") {
                     args.push(_exec_atom(ast.sons[key], context));
                 } else if (ast.sons[key].type == "TRAILER") {
-                    console.log("++++++++++++++++++++++++");console.log(ast.sons[key]);
                     args.push(_exec_trailer(ast.sons[key], context));
                 // } else if (ast.sons[key].type == "**") {
                 //     var op = new ObjectClass.SObject();
@@ -734,9 +716,7 @@ function Engine() {
         if (args.length == 1) {
             return args[0];
         } else {
-            if (debug) {console.log("POWER ARGUE #####");console.log(args);console.log("#####")}
             result = ResFuncSet.RES_power(args,context);
-            if (debug) {console.log("POWER RESULT #####");console.log(result);console.log("#####")}
             return result;
         }
     }
@@ -759,7 +739,6 @@ function Engine() {
                 op.value = _exec_subscriptlist(ast.sons[0], context);  //array[array[str,end,step]...]             
             }
         }
-        if (debug) {console.log("TRAILER RESULT #####");console.log(op);console.log("#####")}
         return op;
     }
 
@@ -782,17 +761,10 @@ function Engine() {
     function _exec_subscript(ast, context) {
         var subscript=new Array();
         var step=1;
-        console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-        console.log(ast);
         if(ast.type == "SUBSCRIPT"){
             if(ast.sons.length!=0 && ast.sons[ast.sons.length-1].type=="SLICEOP"){
                 step=_exec_sliceop(ast.sons[ast.sons.length-1], context);
             }
-            console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-            console.log(step);
-            console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-            console.log(ast.sons);
-            console.log(ast.sons[0]);
             if(ast.sons.length==1 && ast.sons[0].type=="TEST"){//test
                 temp = _exec_test(ast.sons[0], context);
                 if (temp.type=="Number" && temp.value!=null){
@@ -988,7 +960,6 @@ function Engine() {
     */
     function _exec_atom(ast,context,debug) {
         debug = true;
-        if (debug) {console.log("ATOM:");console.log(ast);}
         var result =new ObjectClass.SObject();
         if(ast.type == "ATOM"){
             if (ast.sons[0].type == "NAME") {
@@ -1000,13 +971,14 @@ function Engine() {
                         var temp = temp_context.allEntry[result.name];
                         result.type = temp.type;
                         result.value = temp.value;
+
                         break;
                     } else {
                         temp_context = temp_context.outFunction;
                     }
                 }
-                console.log(context.printEntry());
-                console.log(result);
+
+
                 return result;
             } else if (ast.sons[0].type == "NUMBER") {
                 result.value = Number(ast.sons[0].value);
@@ -1063,15 +1035,11 @@ function Engine() {
     }
 
     function _exec_dictorsetmaker(ast, context) {
-        console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         var args = new ObjectClass.SObject();
         args.type="Dictionary";
         var args_value = new Array();
         for (var i=0;i<ast.sons.length;i=i+3) {
             if(ast.sons[i].type == "TEST" && ast.sons[i+2].type == "TEST" ){
-                console.log("+++++++++++");
-                console.log(ast.sons[i]);
-                console.log(ast.sons[i+2]);
                 var temp1=_exec_test(ast.sons[i],context).copy();
                 temp1.ismember=31;
                 temp1.name="";
@@ -1081,9 +1049,6 @@ function Engine() {
                 if(temp1.type!="Number" && temp1.type!="String" )
                     console.log("Dic_key can only support Number and String");
                 else{
-                    console.log("+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_+_");
-                    console.log(temp1);
-                    console.log(temp2);
                     if (temp1.type == "String")
                         args_value["S_"+temp1.value]=temp2;
                     else 
@@ -1092,8 +1057,6 @@ function Engine() {
             }         
         }
         args.value=args_value;
-        console.log("+++++++++++++++++++++++++++");
-        console.log(args);
         return args;
     }
 
@@ -1104,7 +1067,6 @@ function Engine() {
     }
 
     function _exec_flow_stmt(ast,context){
-        console.log(context.printEntry());
         if(ast.type == "FLOW_STMT"){
             if(ast.sons.length == 1){
                 if(ast.sons[0].type =="BREAK_STMT") {
@@ -1118,7 +1080,6 @@ function Engine() {
                     
                 else if(ast.sons[0].type == "RETURN_STMT") {
                     _exec_return_stmt(ast.sons[0],context);
-                    console.log("ENTER RRRRRRRRRRRRRRReturn");
                 }
                 else if(ast.sons[0].type == "RAISE_STMT")
                     _exec_raise_stmt(ast.sons[0],context);
@@ -1136,8 +1097,6 @@ function Engine() {
             for (var item in args) {
                 result.push(args[item]);
             }
-            console.log("QQQQQQQQQQQQQQQQQQQQQQQQQQ");
-            console.log(result);
             context.return_value = result;
             returnTag = true;
         }
